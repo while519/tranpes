@@ -135,7 +135,7 @@ def PRankingScoreIdx( sh, st, idxh, idxr, idxt):
         """
     num_cores = multiprocessing.cpu_count()
     
-    results = Parallel(n_jobs=1, verbose=11)(delayed(errht)(sh, st, h, r, t) for h, r, t in zip(idxh, idxr, idxt))
+    results = Parallel(n_jobs=num_cores)(delayed(errht)(sh, st, h, r, t) for h, r, t in zip(idxh, idxr, idxt))
     errh, errt = zip(*results)
     
     return errh, errt
