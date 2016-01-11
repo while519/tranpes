@@ -208,12 +208,12 @@ def create_TrainFunc_tranPES(simfn, embeddings,  marge=0.5, alpha=1., beta=1.):
     lembedding = embeddings[1]
 
     # declare the symbolic variables for training triples
-    hp = S.csr_matrix('head positive') # N x batchsize matrix
-    rp = S.csr_matrix('relation')
-    tp = S.csr_matrix('tail positive')
+    hp = T.ivector('head positive') # N x batchsize matrix
+    rp = T.ivector('relation')
+    tp = T.ivector('tail positive')
 
-    hn = S.csr_matrix('head negative')
-    tn = S.csr_matrix('tail negative')
+    hn = T.ivector('head negative')
+    tn = T.ivector('tail negative')
 
     lemb = T.scalar('embedding learning rate')
     lremb = T.scalar('relation learning rate')
@@ -222,12 +222,12 @@ def create_TrainFunc_tranPES(simfn, embeddings,  marge=0.5, alpha=1., beta=1.):
     subtensorR = T.ivector('batch link set')
 
     # Generate the training positive and negative triples
-    hpmat = S.dot(embedding.E, hp).T #  batchsize x D dense matrix
-    rpmat = S.dot(lembedding.E, rp).T
-    tpmat = S.dot(embedding.E, tp).T
+    hpmat = embedding.E[:,hp].T #  batchsize x D dense matrix
+    rpmat = embedding.E[:,rp].T
+    tpmat = embedding.E[:,tp].T
 
-    hnmat = S.dot(embedding.E, hn).T
-    tnmat = S.dot(embedding.E, tn).T
+    hnmat = embedding.E[:,hn].T
+    tnmat = embedding.E[:,tn].T
 
     # calculate the score
     pos = tranPES3(simfn, T.concatenate([hpmat, tpmat], axis=1).reshape((hpmat.shape[0], 2, hpmat.shape[1])).dimshuffle(0, 2, 1), hpmat, rpmat, tpmat)

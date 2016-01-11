@@ -180,7 +180,15 @@ def FB15kexp(state):
             subsetR = idxset(rbatch)
             subsetE = idxset(sp.hstack((hbatch, tbatch, hnbatch,tnbatch), format='csr'))
 
-            outtmp = TranPES(state.lremb, state.lrparam, hbatch, rbatch, tbatch, hnbatch, tnbatch, subsetE, subsetR)
+            idxhbatch = convert2idx(hbatch)
+            idxrbatch = convert2idx(rbatch)
+            idxtbatch = convert2idx(tbatch)
+
+            idxhnbatch = convert2idx(hnbatch)
+            idxtnbatch = convert2idx(tnbatch)
+
+            outtmp = TranPES(state.lremb, state.lrparam, idxhbatch, idxrbatch,
+                             idxtbatch, idxhnbatch, idxtnbatch, subsetE, subsetR)
             out += [outtmp[0]/batchsize]
             outb += [outtmp[1]]
             outc += [outtmp[2]]
