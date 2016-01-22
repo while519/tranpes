@@ -196,7 +196,7 @@ def FB15kexp(state):
         outc = []
 
 
-        if (epoch_count % state.test_all) ==0 and epoch_count >= 400:
+        if (epoch_count % state.test_all) ==0 and epoch_count >= (state.totepochs - 100):
             # save current model
             state.nbepochs = epoch_count
             f = open(state.savepath + '/' + 'model' + str(state.nbepochs) + '.pkl', 'wb')
