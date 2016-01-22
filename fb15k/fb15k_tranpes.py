@@ -9,6 +9,7 @@ sys.path.append('/home/yuwu/code/tranpes/')       # root directory
 from model import *
 import math
 import time
+import cProfile
 
 
 def create_nmat(shape, listidx):  # create the negative samples
@@ -162,6 +163,9 @@ def FB15kexp(state):
     print('BEGIN TRAINING')
     timeref = time.time()
     for epoch_count in range(1, state.totepochs + 1):
+        pr = cProfile.Profile()
+        pr.enable()
+
         order = np.random.permutation(trainhmat.shape[1])
 
         trainhmat = trainhmat[:, order]
@@ -194,6 +198,9 @@ def FB15kexp(state):
         out = []
         outb = []
         outc = []
+
+        pr.disable()
+        pr.print_stats(sort='call')
 
 
         if (epoch_count % state.test_all) ==0 and epoch_count >= 400:
@@ -246,4 +253,4 @@ def launch(datapath='data/', dataset='FB15k', Nbent=16296, Nbsyn=14951, Nbrel=13
 
 
 if __name__ == '__main__':
-    launch(test_all=10, totepochs=500, neval=1, marge=0.3, nbatches=100, alpha=1., beta=0.01, lremb=0.002, lrparam=0.002)
+    launch(test_all=10, totepochs=1, neval=1, marge=0.3, nbatches=100, alpha=1., beta=0.01, lremb=0.002, lrparam=0.002)

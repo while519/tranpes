@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.linalg import inv
 import copy
+import cProfile
 
 
 class Embeddings():
@@ -89,6 +90,8 @@ def TranPES(state, simfn, embeddings, hp, lp, tp, hn, tn, subtensorE, subtensorR
     :param subtensorR:
     :return:
     '''
+    pr = cProfile.Profile()
+    pr.enable()
     embedding = embeddings[0]
     lembedding = embeddings[1]
 
@@ -139,6 +142,9 @@ def TranPES(state, simfn, embeddings, hp, lp, tp, hn, tn, subtensorE, subtensorR
     New_lembedding[:, subtensorR] -= 2*state.beta*lembedding.E[:,subtensorR]
     embedding.E = embedding.E + New_embedding*state.lremb
     lembedding.E = lembedding.E + New_lembedding*state.lrparam
+
+    pr.disable()
+    pr.print_stats(sort="call")
     return cost, np.mean(out)
 
 
