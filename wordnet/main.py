@@ -1,4 +1,5 @@
 from wordnet_train import *
+import wordnet_evaluation
 
 # training the model
 launch(test_all=10, totepochs=1000, neval=1000, marge=1., nbatches=100,
