@@ -145,9 +145,8 @@ true_triples = np.concatenate([idxh, idxvh, idxth, idxl, idxvl, idxtl, idxt, idx
 simfn = eval(state.simfn + 'sim')
 
 
-for model in ['model400', 'model410', 'model420', 'model430', 'model440', 'model450', 'model460', 'model470',
-               'model480',
-               'model490', 'model500']:
+for model in ['model900', 'model910', 'model920', 'model930', 'model940', 'model950', 'model960', 'model970',
+               'model980', 'model990', 'model1000']:
      f = open(state.savepath + '/' + model + '.pkl', 'rb')
      embeddings = pickle.load(f)
      f.close()
