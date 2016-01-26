@@ -82,7 +82,7 @@ def evaluation():
     state = pickle.load(f)
     f.close()
 
-    state.neval = 1000
+    state.neval = 10
     state.bestvalid = -1
     print(state)
 
@@ -157,12 +157,14 @@ def evaluation():
          ranktfunc = RankTailFnIdx(simfn, embeddings, subtensorspec=state.Nbsyn)
 
          timeref = time.time()
-         resvalid = PRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
+         resvalid = RankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
+         fresvalid = FilteredRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx, true_triples)
          print('the evaluation took %s' % (time.time() - timeref))
 
          state.valid = np.mean(resvalid[0] + resvalid[1])
          if state.bestvalid == -1 or state.valid < state.bestvalid:
              output('valid_' + model, resvalid, n)
+             output('Filteredvalid' + model, fresvalid, n)
              restest = PRankingScoreIdx(rankhfunc, ranktfunc, testhidx, testlidx, testtidx)
              restrain = PRankingScoreIdx(rankhfunc, ranktfunc, trainhidx, trainlidx, traintidx)
              state.bestvalid = state.valid
@@ -195,9 +197,79 @@ def evaluation():
 
     timeref = time.time()
     #res = PRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
+    # res = FilteredPRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt, true_triples)
     res = PRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt)
     print('the evaluation took %s' % (time.time() - timeref))
     output('test_' + state.bestmodel, res, n)
+
+
+def RankingEvalf():
+    n = 10
+    f = open('best_state.pkl', 'rb')
+    state = pickle.load(f)
+    f.close()
+    print(state)
+
+    np.random.seed(state.seed)
+
+    # Positives
+    trainhmat = load_pkl(state.datapath + 'FB15k-train-hs.pkl')
+    trainlmat = load_pkl(state.datapath + 'FB15k-train-ls.pkl')
+    traintmat = load_pkl(state.datapath + 'FB15k-train-ts.pkl')
+    if state.op == 'tranPES':
+        trainhmat = trainhmat[:state.Nbsyn, :]
+        trainlmat = trainlmat[-state.Nbrel:, :]
+        traintmat = traintmat[:state.Nbsyn, :]
+
+    # Valid set
+    validhmat = load_pkl(state.datapath + 'FB15k-valid-hs.pkl')
+    validlmat = load_pkl(state.datapath + 'FB15k-valid-ls.pkl')
+    validtmat = load_pkl(state.datapath + 'FB15k-valid-ts.pkl')
+    if state.op == 'tranPES':
+        validhmat = validhmat[:state.Nbsyn, :]
+        validlmat = validlmat[-state.Nbrel:, :]
+        validtmat = validtmat[:state.Nbsyn, :]
+
+    # Test set
+    testhmat = load_pkl(state.datapath + 'FB15k-test-hs.pkl')
+    testlmat = load_pkl(state.datapath + 'FB15k-test-ls.pkl')
+    testtmat = load_pkl(state.datapath + 'FB15k-test-ts.pkl')
+    if state.op == 'tranPES':
+        testhmat = testhmat[:state.Nbsyn, :]
+        testlmat = testlmat[-state.Nbrel:, :]
+        testtmat = testtmat[:state.Nbsyn, :]
+
+    # Index conversion
+    idxh = convert2idx(trainhmat)
+    idxl = convert2idx(trainlmat)
+    idxt = convert2idx(traintmat)
+    idxvh = convert2idx(validhmat)
+    idxvl = convert2idx(validlmat)
+    idxvt = convert2idx(validtmat)
+    idxth = convert2idx(testhmat)
+    idxtl = convert2idx(testlmat)
+    idxtt = convert2idx(testtmat)
+
+    true_triples = np.concatenate([idxh, idxvh, idxth, idxl, idxvl, idxtl, idxt, idxvt, idxtt]).reshape(3,
+                                                                                                        idxh.shape[0] +
+                                                                                                        idxvh.shape[0] +
+                                                                                                        idxth.shape[
+                                                                                                            0]).T
+
+    simfn = eval(state.simfn + 'sim')
+
+
+    g = open(state.savepath + '/' + state.bestmodel + '.pkl', 'rb')
+    embeddings = pickle.load(g)
+    g.close()
+
+    rankhfunc = RankHeadFnIdx(simfn, embeddings, subtensorspec=state.Nbsyn)
+    ranktfunc = RankTailFnIdx(simfn, embeddings, subtensorspec=state.Nbsyn)
+
+    timeref = time.time()
+    fres = FilteredPRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt, true_triples)
+    print('the evaluation took %s' % (time.time() - timeref))
+    output('Filteredtest_' + state.bestmodel, fres, n)
 
 
 
