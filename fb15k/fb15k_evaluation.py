@@ -48,6 +48,18 @@ def convert2idx(spmat):
     rows, cols = spmat.nonzero()
     return rows[np.argsort(cols)]
 
+def convert2label(avghl, avgtl):
+    if avghl <= 1.5:
+        strt = '1'
+    else:
+        strt = 'Many'
+
+    if avgtl <= 1.5:
+        strh = '1'
+    else:
+        strh = 'Many'
+    return '-To-'.join((strh, strt))
+
 
 def output(model, res, n):
     dres = {}
@@ -73,6 +85,10 @@ def output(model, res, n):
         round(dres['microgmean'], 5), round(dres['microgmedian'], 5),
         n, round(dres['microghits@n'], 3)))
     return
+
+
+def hitn(lis):
+    return np.mean(np.asarray(lis, dtype=np.int32) <=10)*100
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -271,7 +287,45 @@ def RankingEvalf():
     print('the evaluation took %s' % (time.time() - timeref))
     output('Filteredtest_' + state.bestmodel, fres, n)
 
+    f = open('Filtered_eval.pkl', 'wb')
+    pickle.dump(fres, f, -1)
+    f.close()
 
+    idx2cat = {}
+    cat2idx = {}
+    for lidx in range(0, state.Nbrel):
+        lo = np.argwhere(true_triples[:,1] == lidx).flatten()
+
+        hl = true_triples[lo, 0]
+        _, hlcounts = np.unique(hl, return_counts=True)
+
+        lt = true_triples[lo, 2]
+        _, tlcounts = np.unique(lt, return_counts=True)
+        idx2cat[lidx] = convert2label(hlcounts.mean(), tlcounts.mean())
+        cat2idx.setdefault(convert2label(hlcounts.mean(), tlcounts.mean()), []).append(lidx)
+
+    vlist = list(idx2cat.values())
+    print([(s, vlist.count(s)) for s in set(vlist)])
+
+    hrank = fres[0]
+    trank = fres[1]
+
+    hcat2rank = {}
+    tcat2rank = {}
+
+    for hs, ts, linkid in zip(hrank, trank, idxtl):
+        hcat2rank.setdefault(idx2cat[linkid], []).append(hs)
+        tcat2rank.setdefault(idx2cat[linkid], []).append(ts)
+
+    print('#Predicting head:')
+    print('%12s  %12s  %12s  %12s' % ('1-To-1', '1-To-M', 'M-To-1', 'M-To-M'))
+    print('%12s%%  %12s%%  %12s%%  %12s%%' % (hitn(hcat2rank['1-To-1']), hitn(hcat2rank['1-To-Many']),
+                                        hitn(hcat2rank['Many-To-1']), hitn(hcat2rank['Many-To-Many'])))
+
+    print('#Predicting tail:')
+    print('%12s  %12s  %12s  %12s' % ('1-To-1', '1-To-M', 'M-To-1', 'M-To-M'))
+    print('%12s%%  %12s%%  %12s%%  %12s%%' % (hitn(tcat2rank['1-To-1']), hitn(tcat2rank['1-To-Many']),
+                                        hitn(tcat2rank['Many-To-1']), hitn(tcat2rank['Many-To-Many'])))
 
         # listrel = set(idxr)
         # dictrelres = {}
@@ -357,4 +411,5 @@ def RankingEvalf():
         #         len(dictrelres[i][0] + dictrelres[i][1])))
 
 if __name__ == '__main__':
-    evaluation()
+    #evaluation()
+    RankingEvalf()
