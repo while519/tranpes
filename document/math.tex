@@ -1,0 +1,164 @@
+\documentclass[10pt,journal]{IEEEtran}
+
+\usepackage{bm,amsmath}
+\usepackage{subfigure,epsfig,graphicx}
+\usepackage{verbatim}
+\usepackage{cite}
+\usepackage{url}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{color}
+
+
+
+
+\begin{document}
+
+\title{Report for Relational Learning}
+\author{ Yu Wu, Nov. 2015
+             }
+\maketitle
+
+
+
+\section{Proposed Model}
+The knowledge graph data $\mathcal{D}$ consists of a set of links between a fixed set of entities. Let $\mathcal{E} = \{e_1, \ldots, e_{N_e}\}$ denote the entity set and $\mathcal{R} = \{r_1, \ldots, r_{N_r}\}$ the link set.  The relationship between entities indicated by $\mathcal{D}$ are represented as relation triples such as $(e_h,r_{\ell},e_t)$, where $e_h, e_t\in \mathcal{E}$ are referred as the head  and tail, respectively, and  $r_{\ell} \in \mathcal{R}$ the link.  For example, $(\emph{Champa}, \emph{formofgoverment}, \emph{Monarchy})$ is one of such relation triples which the head entity \emph{Champa} and the tail entity \emph{Monarchy} is linked by the relation type \emph{formofgoverment}.  For the sake of convenience of discussion, we simplified the relation triple as $(h,\ell, t)$   by referring only the indices of the entities and links. Given a set of known links within $\mathcal{D}$, the goal of a relational learning task is to  infer unknown links and correct the known links to complete the graph $\mathcal{D}$. One way to solve this task is to learn an energy function $E(h, \ell, t)$ on the set of all poosible triples $\mathcal{E} \times \mathcal{R} \times \mathcal{E}$ so that a triple representing a truly existing link between two entities  is assembled with a low energy, otherwise with high energy. 
+
+%For instance, $E(h, l, t)\geq c$ indicates there exists link $r_l$ between the entities $e_h$ and $e_t$ and $E(h, l, t)<c$ otherwise, where $c$ is a threshold. 
+
+\subsection{Energy Function}
+The proposed method  \emph{tranPES}  parameterises the energy function of an input relation triple over three individual $k$-dimensional embedding vectors of its head, tail and link, as well as as a set of $k\times k$ transformation matrices $\{\textbf{P}_{ht}\}_{h,t}$ where different matrices are constructed for different head-tail entity pairs $(h,t)$. Letting $\{\bm e_i\}_{i=1}^{N_e}$ denote the entity embedding vectors and  $\{\bm r_i\}_{i=1}^{N_r}$ the link embeddings, the \emph{tranPES} energy function is defined as the following:
+\begin{equation} \label{energy}
+\mathrm{E}{(h,\ell, t)} = \|\bm{e}_h +\textbf{P}_{ht} \bm{r}_{\ell}-\bm{e}_t\|_2.
+\end{equation}
+Apart from the $l_2$-norm, it is  possible to compute the energy based on other norms, e.g., the $l_1$-norm, $p$-norm, or other dissimilarity measures. Instead of freely setting the transformation matrices, $\textbf{P}_{ht}$ is restricted as a projection matrix that  gives the projection of a $k$-dimensional vector onto the space spanned by the two $k$-dimensional entity vectors $\bm{e}_h$ and $\bm{e}_t$.  Letting the columns of the $k\times 2$ matrix $\textbf{E}_{ht}$ store the two entity embedding vectors $\bm{e}_h $ and $\bm{e}_t$, the projection matrix is given by 
+\begin{equation}
+\textbf{P}_{ht}=\textbf{E}_{ht}\left(\textbf{E}_{ht}^T \textbf{E}_{ht} \right)^{-1}\textbf{E}_{ht}^T.
+\end{equation}
+To deal with cases when $\bm{e}_h$ and $\bm{e}_t$ take the same direction, the above expression can be further modified by adding a  regularisation term, leading to
+\begin{equation}
+\textbf{P}_{ht}=\textbf{E}_{ht}\left(\textbf{E}_{ht}^T \textbf{E}_{ht} +\xi\textbf{I}\right)^{-1}\textbf{E}_{ht}^T.
+\end{equation}
+The orthogonal complementary $(\textbf{I} -  \textbf{P}_{ht}) \bm{r}_{\ell}$ of the projected link embedding vector  is always close to perpendicular to  $\bm{e}_h$ and $\bm{e}_t$. This can be shown by the following:
+\begin{align}
+ &\begin{bmatrix} \bm{e}_h^{T} \\ \bm{e}_t^{T} \end{bmatrix} (\textbf{I} -  \textbf{P}_{ht})\bm{r}_{\ell} \notag  \\
+=&\textbf{E}_{ht}^{T}\left(\textbf{I} -  \textbf{P}_{ht}\right)\bm{r}_{\ell}  \notag \\
+=&\textbf{E}_{ht}^{T}\left(\bm{r}_{\ell} -  \textbf{E}_{ht}\left(\textbf{E}_{ht}^{T} \textbf{E}_{ht} + \xi \textbf{I} \right)^{-1} \textbf{E}_{ht}^{T} \bm{r}_{\ell}\right)  \notag \\
+=&\textbf{E}_{ht}^{T}\bm{r}_{\ell} - \left (\textbf{E}_{ht}^{T} \textbf{E}_{ht}+\xi \textbf{I} - \xi \textbf{I}\right)\left(\textbf{E}_{ht}^{T} \textbf{E}_{ht} + \xi \textbf{I}\right )^{-1} \textbf{E}_{ht}^{T} \bm{r}_{\ell} \notag \\
+=& \textbf{E}_{ht}^{T}\bm{r}_{\ell} - \textbf{E}_{ht}^{T} \bm{r}_{\ell}  +  \xi \left(\textbf{E}_{ht}^{T} \textbf{E}_{ht} + \xi \textbf{I}\right )^{-1} \textbf{E}_{ht}^{T} \bm{r}_{\ell}  \notag \\
+=& \xi \left(\textbf{E}_{ht}^{T} \textbf{E}_{ht} + \xi \textbf{I}\right )^{-1} \textbf{E}_{ht}^{T} \bm{r}_{\ell}   \label{temp}
+\end{align}
+
+Let the economic singular value decomposition of the $k \times 2$ matrix $\textbf{E}_{ht}$ as:
+\begin{equation*}
+\textbf{E}_{ht} = \textbf{U} \mathbf{\Sigma} \textbf{V}^{T}
+\end{equation*}
+where \textbf{U} is a $k \times 2$ real unitary matrix, $\mathbf{\Sigma}$ is a $2 \times 2$ rectangular diagonal matrix with non-negative real numbers on the diagonal, and \textbf{V} is a $2 \times 2$ real unitary matrix.
+
+Then the Eqs. (\ref{temp}) can be further simplified as:
+\begin{align}
+& \xi \left(\textbf{E}_{ht}^{T} \textbf{E}_{ht} + \xi \textbf{I}\right )^{-1} \textbf{E}_{ht}^{T} \bm{r}_{\ell} \notag \\
+=& \xi \left(\textbf{V} \mathbf{\Sigma} \textbf{U}^{T}  \textbf{U} \mathbf{\Sigma} \textbf{V}^{T} + \xi \textbf{I}\right )^{-1} \textbf{V} \mathbf{\Sigma} \textbf{U}^{T} \bm{r}_{\ell} \notag \\
+=& \xi \left(\textbf{V} \mathbf{\Sigma}^2 \textbf{V}^{T} + \xi \textbf{I}\right )^{-1} \textbf{V} \mathbf{\Sigma} \textbf{U}^{T} \bm{r}_{\ell} \notag \\
+=& \xi \textbf{V} \left(\mathbf{\Sigma}^2 + \xi \textbf{I} \right)^{-1} \textbf{V}^{T} \textbf{V} \mathbf{\Sigma} \textbf{U}^{T} \bm{r}_{\ell} \notag \\
+=& \xi \textbf{V} \left(\mathbf{\Sigma}^2 + \xi \textbf{I} \right)^{-1} \mathbf{\Sigma} \textbf{U}^{T} \bm{r}_{\ell} \notag \\
+=& \xi \left( \textbf{V} \begin{bmatrix} \frac{\sigma_1}{\sigma_1^2 + \xi} & 0 \\ 0 & \frac{\sigma_2}{\sigma_2^2 + \xi}   \end{bmatrix} \textbf{U}^{T} \bm{r}_{\ell}  \right)\notag \\
+\approx & \bm{0}
+\end{align}
+
+Thus, the regularisation term $\xi \textbf{I}$ not only making the projection transformation matrices $\{\textbf{P}_{ht}\}_{h,t}$ calculable in all circumstances but also preserves the property that the projected link embedding vector  could only be spanned by the corresponding entity embedding vectors.
+
+\subsection{Training}
+Given a set of known links between entities, a set of valid triples can be created from it. This set is referred as the positive triple  set, denoted as $\mathcal{D}^+$. For each positive triple $(h,l,t)\in\mathcal{D}^+$, a set of  corrupted triples can be generated by replacing either its head or tail  with a different one, given as
+\begin{align*}
+\small
+\mathcal{D}^{-}_{h,l,t} = &  \left\{ (h^{'},\ell,t)  |  h^{'} \in \{ 1,2,\ldots, N_e\}, (h^{'},\ell,t)\notin \mathcal{D}^+ \right\} \cup \\
+ &  \left\{ (h,\ell,t^{'})  |   t^{'} \in \{ 1,2,\ldots, N_e\},  (h,\ell,t^{'}) \notin \mathcal{D}^+\right\}
+\end{align*}
+
+To learn the energy function in Eq. (\ref{energy}) parameterised on the entity and link embeddings is equivalent to the optimisation of these embedding vectors to encourage the maximum discrimination between  the positive  and negative triples. To achieve this, a margin-based ranking loss can be employed, given as
+\begin{equation} \label{loss}
+\small
+\mathcal{L}_m = \sum_{(h,\ell,t)\in \mathcal{D}^+} \sum_{(h^{'},\ell,t^{'})\in  \mathcal{D}^{-}_{h,\ell,t}} [\gamma + \mathrm{E}(h,\ell,t)- \mathrm{E}(h^{'},\ell,t^{'}) ]_+,
+\end{equation}
+where $[*]_+$ denotes the positive part of the input number $*$, and $\gamma > 0$ is a user-set margin parameter.
+
+A length constraint can be imposed to the entity embeddings to prevent the training process to trivially minimise $\mathcal{L}_m$ by artificially increasing the scale of the entity embedding. This constraint can be incorporated into the cost function $\mathcal{L}_m$.  And we add the regularisation term  for the relational embedding vectors. This leads to a regularised cost function given as
+\begin{equation} \label{loss2}
+\mathcal{L} = \mathcal{L}_m  +\lambda_1 \sum_{i =1}^{N_e} \left[\|\bm{e}_i\|_2^2 - 1\right]_+ + \lambda_2 \sum_{j=1}^{N_r} \| \bm{r}_{j} \|_2^2,
+\end{equation}
+where $\lambda_1, \lambda_2 >0$ are the regularisation parameters. Finally, the  following optimisation problem is solved, given as
+\begin{equation}
+\min_{\{\bm e_i\}_{i=1}^{N_e}, \{\bm r_i\}_{i=1}^{N_r}} \mathcal{L}\left(\{\bm e_i\}_{i=1}^{N_e}, \{\bm r_i\}_{i=1}^{N_r}, \xi,\lambda_1, \lambda_2 \right).
+\end{equation}
+
+Similar to the optimisation procedure used in \cite{bordes_translating_2013}, a stochastic gradient descent algorithm in minibatch mode is used. The embedding vectors are first initialised following the random procedure in \cite{glorot_understanding_2010}. The algorithm is stopped based on its performance on a validation set.  Pseudo code of the proposed algorithm is provided in Algorithm $\textbf{1}$.
+
+
+
+\subsection{Discussion}
+The proposed idea is inspired by the limitation of the energy function $\mathrm{E}{(h,\ell, t)} = \|\bm{e}_h + \bm{r}_{\ell}-\bm{e}_t\|_2^2$ of \emph{transE} \cite{bordes_translating_2013}  which is one of the most commonly used algorithm in relational learning.  For instances, considering the simple link of ``$isa$" in  the statement \emph{Bob Dylan was a song writer, singer, performer, book author and film actor}, the following relation triples can be generated from it:
+\\
+\begin{tabular}[center]{l l l} 
+ \\
+ \emph{head} & \emph{link} & \emph{tail} \\
+ \hline 
+ (\emph{BobDylan}, & \emph{isa}, & \emph{SongWriter}) \\
+ (\emph{BobDylan}, & \emph{isa}, & \emph{Singer}) \\
+  (\emph{BobDylan}, & \emph{isa}, & \emph{Performer}) \\
+   (\emph{BobDylan}, & \emph{isa}, & \emph{BookAuthor }) \\
+    (\emph{BobDylan}, & \emph{isa}, & \emph{FilmActor}) \\\\
+ \end{tabular}\\
+Both \emph{transE} and many existing algorithms assign one unified embedding vector to represent the same link.  Since the learned energies of the valid triples  possess low values,  different entities such as song writer, singer and performer are  distributed very close to each other in the embedding space due to their closeness to the same embedding vector of  the link ``$isa$". Although there exist distinctions between the occupations represented by these entities, the learned embeddings are not able to highlight such distinction. To overcome this,  the proposed energy function  first projects the link embedding vector onto the hyperplane spanned by the two  entity embedding vectors, and then performs the distance computation within the hyperplane.  This subsequently results in different representations of the link when it gets involved with different entity pairs.  The energy function  $\mathrm{E}{(h,\ell, t)} = \|\textbf{P}_l\bm{e}_h + \bm{r}_{\ell}-\textbf{P}_l\bm{e}_t\|_2^2$ of \emph{transR} \cite{lin_learning_2015} is another one proposed to overcome the limitation of   \emph{transE}. It allows the entities and links to be distributed in different embedding spaces of dimensions $d$ and $k$, respectively, and  introduces a set of $ k\times d$ projection matrices $\{\textbf{P}_l\}_{l=1}^{N_r}$ to align the two spaces over each link. In a way, it fixes an embedding space for the links, and project each pair of the entities $(\bm{e}_h, \bm{e}_t)$ onto this space to further formulate the distance. For the same entity,  its final representation $\textbf{P}_l\bm{e}_h$ used for comparing distance  differs over different links. On the contrary, the proposed method allows various customised representations $\textbf{P}_{ht} \bm{r}_{\l}$ for a link to suit the needs of different entity pairs, but maintains the fixed embedding representation for the entities when comparing distance. This thus allows the opportunity to propagate the relation information through entities. For instance, we assume there exist entities $c_1,c_2, \ldots,d_1,d_2,\ldots, e_1, e_2, \ldots$ belonging to three classes of $C,D,E$ and the class structure can be reflected by the link information.   When the entities are projected in a same fixed space,  their embeddings are able to  show directly the within-class closeness and between-class dispersion in the same space, thus it is possible to  transfer the instance-based inference to the class-based inference e.g., from $(c_i, r_1, d_j) \wedge (d_j, r_2,, e_k) \Rightarrow  (c_i, r_3, e_k)$ to $(C, r_1, D)\wedge (D, r_2, E) \Rightarrow  (C, r_3, E)$.
+
+
+
+%This model also permit to propagate information between triples as each entity are having the same representation over all different relation types. For instance, suppose that in the embeddings there are entities $c_1,c_2, \ldots,d_1,d_2,\ldots, e_1, e_2, \ldots$ belong to 3 classes $C,D,E$, and the enitities have been embedded very close within each class. If there are some triples with the relationship that both $(c_i, r_1, d_j), (d_j, r_2,, e_k)$ and $(c_i, r_3, e_k)$ are true, then the deterministic rules in the graph that if $(C, r_1, D), (D, r_2, E)$ holds then $(C, r_3, E)$ have to be true are learned if no conflicting information has involved.
+
+For evaluation, we use the same ranking procedure  as in \cite{bordes_learning_2011}. For each test triplet, the head is removed and replaced by each of the entities of the dictionary in turn. Dissimilarities (or energies) of those corrupted triplets are first computed by the models and then sorted by ascending order; the rank of the correct entity is finally stored. This whole procedure is repeated while removing the tail instead of the head. The \emph{mean} of those predicted ranks and the \emph{hit@10}, i.e. the proportion of correct entities ranked in the top $10$ are used for the evaluation.
+
+
+\section{Experiments}
+To compare our proposed algorithm with various other methods from the literature, we evaluate our approach on the two typical knowledge base, WordNet \cite{miller_wordnet:_1995} and Freebase \cite{bordes_learning_2011}.
+
+\begin{algorithm}
+\caption{Learning TranPES }
+\textbf{input} Training set $\mathcal{D} = \{(h,\ell,t)\}$, entities and rel. set $\mathcal{E}$ and $\mathcal{R}$, margin $\gamma$, regularisation term $\lambda_1, \lambda_2$ and embeddings dimension $k$.
+\begin{enumerate}
+\item \textbf{initialise} 
+\begin{description}
+\item $\bm{r} \leftarrow$ uniform $(-\frac{6}{\sqrt{k}}, \frac{6}{k})$ for each $\bm{r} \in \mathcal{R}$ 
+\item	$\bm{r} \leftarrow \bm{r} / \| \bm{r} \|$ for each $\bm{r} \in \mathcal{R}$
+\item $\bm{e} \leftarrow$ uniform $(-\frac{6}{\sqrt{k}}, \frac{6}{k})$ for each $\bm{e} \in \mathcal{E}$ 
+\item	$\bm{e} \leftarrow \bm{e} / \| \bm{e} \|$ for each $\bm{e} \in \mathcal{E}$
+\end{description}
+
+\item \textbf{loop}
+\begin{description}
+\item $\mathcal{D}_{batch} \leftarrow$ sample from $\mathcal{D}$ 	{\color{green} // sample a minibatch triplets of size b}
+\item $\mathcal{T}_{batch} \leftarrow \emptyset$  {\color{green} //  for storing the set of pairs of correct and corrupted triplets}
+\item \textbf{for} $(h,l,t) \in \mathcal{D}$ \textbf{do}
+\begin{description}
+\item $(h^{'},\ell,t^{'}) \leftarrow$ sample from $\mathcal{D}^{-}_{(h,l,t)}$ {\color{green} // sample a corrupted triplet}
+\item $\mathcal{T}_{batch} \leftarrow \mathcal{T}_{batch} \cup \{ ((h,\ell,t),(h^{'},\ell,t^{'})) \}$
+\end{description}
+\item \textbf{end for}
+\item $\mathcal{E} \leftarrow$  head and tail set of $\mathcal{T}_{batch}$
+\item $\mathcal{R} \leftarrow$  link set of $\mathcal{T}_{batch}$ 
+\item Updates embeddings w.r.t.  
+\begin{equation*}
+\sum_{(h, \ell, t),(h^{'},\ell,t^{'})\in  \mathcal{T}_{batch}} {[\gamma + \mathrm{E}(h,l,t)- \mathrm{E}(h^{'},\ell,t^{'}) ]_+}  +\lambda_1 \sum_{m \in \mathcal{E}} \left[\|\bm{e}_m\|_2^2 - 1\right]_+ + \lambda_2 \sum_{n \in \mathcal{R}} \| \bm{r}_{n} \|_2^2,
+\end{equation*}
+
+\end{description}
+
+\end{enumerate}
+
+\end{algorithm}
+
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{My_Library}
+
+\end{document} 
