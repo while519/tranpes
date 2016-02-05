@@ -8,6 +8,7 @@
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{color}
+\usepackage{multirow}
 
 
 
@@ -95,6 +96,40 @@ where $\lambda_1, \lambda_2 >0$ are the regularisation parameters. Finally, the 
 Similar to the optimisation procedure used in \cite{bordes_translating_2013}, a stochastic gradient descent algorithm in minibatch mode is used. The embedding vectors are first initialised following the random procedure in \cite{glorot_understanding_2010}. The algorithm is stopped based on its performance on a validation set.  Pseudo code of the proposed algorithm is provided in Algorithm $\textbf{1}$.
 
 
+\begin{algorithm*}
+\caption{Learning TranPES }
+\textbf{input} Training set $\mathcal{D} = \{(h,\ell,t)\}$, entities and rel. set $\mathcal{E}$ and $\mathcal{R}$, margin $\gamma$, regularisation term $\lambda_1, \lambda_2$ and embeddings dimension $k$.
+\begin{enumerate}
+\item \textbf{initialise} 
+\begin{description}
+\item $\bm{r} \leftarrow$ uniform $(-\frac{6}{\sqrt{k}}, \frac{6}{k})$ for each $\bm{r} \in \mathcal{R}$ 
+\item	$\bm{r} \leftarrow \bm{r} / \| \bm{r} \|$ for each $\bm{r} \in \mathcal{R}$
+\item $\bm{e} \leftarrow$ uniform $(-\frac{6}{\sqrt{k}}, \frac{6}{k})$ for each $\bm{e} \in \mathcal{E}$ 
+\item	$\bm{e} \leftarrow \bm{e} / \| \bm{e} \|$ for each $\bm{e} \in \mathcal{E}$
+\end{description}
+
+\item \textbf{loop}
+\begin{description}
+\item $\mathcal{D}_{batch} \leftarrow$ sample from $\mathcal{D}$ 	{\color{green} // sample a minibatch triplets of size b}
+\item $\mathcal{T}_{batch} \leftarrow \emptyset$  {\color{green} //  for storing the set of pairs of correct and corrupted triplets}
+\item \textbf{for} $(h,l,t) \in \mathcal{D}$ \textbf{do}
+\begin{description}
+\item $(h^{'},\ell,t^{'}) \leftarrow$ sample from $\mathcal{D}^{-}_{(h,l,t)}$ {\color{green} // sample a corrupted triplet}
+\item $\mathcal{T}_{batch} \leftarrow \mathcal{T}_{batch} \cup \{ ((h,\ell,t),(h^{'},\ell,t^{'})) \}$
+\end{description}
+\item \textbf{end for}
+\item $\mathcal{E}_{batch} \leftarrow$  head and tail set of $\mathcal{T}_{batch}$
+\item $\mathcal{R}_{batch} \leftarrow$  link set of $\mathcal{T}_{batch}$ 
+\item Updates embeddings w.r.t.  
+\begin{equation*}
+\sum_{(h, \ell, t),(h^{'},\ell,t^{'})\in  \mathcal{T}_{batch}} {[\gamma + \mathrm{E}(h,l,t)- \mathrm{E}(h^{'},\ell,t^{'}) ]_+}  +\lambda_1 \sum_{m \in \mathcal{E}_{batch}} \left[\|\bm{e}_m\|_2^2 - 1\right]_+ + \lambda_2 \sum_{n \in \mathcal{R}_{batch}} \| \bm{r}_{n} \|_2^2,
+\end{equation*}
+
+\end{description}
+
+\end{enumerate}
+
+\end{algorithm*}
 
 \subsection{Discussion}
 The proposed idea is inspired by the limitation of the energy function $\mathrm{E}{(h,\ell, t)} = \|\bm{e}_h + \bm{r}_{\ell}-\bm{e}_t\|_2^2$ of \emph{transE} \cite{bordes_translating_2013}  which is one of the most commonly used algorithm in relational learning.  For instances, considering the simple link of ``$isa$" in  the statement \emph{Bob Dylan was a song writer, singer, performer, book author and film actor}, the following relation triples can be generated from it:
@@ -119,42 +154,120 @@ For evaluation, we use the same ranking procedure  as in \cite{bordes_learning_2
 
 
 \section{Experiments}
-To compare our proposed algorithm with various other methods from the literature, we evaluate our approach on the two typical knowledge base, WordNet \cite{miller_wordnet:_1995} and Freebase \cite{bordes_learning_2011}.
+To compare our proposed algorithm with various other methods from the literature, we evaluate our approach on the two typical knowledge base, WordNet \cite{miller_wordnet:_1995} and Freebase \cite{bollacker_freebase:_2008}. We listed some statistics of these data in Table \ref{data}.
 
-\begin{algorithm}
-\caption{Learning TranPES }
-\textbf{input} Training set $\mathcal{D} = \{(h,\ell,t)\}$, entities and rel. set $\mathcal{E}$ and $\mathcal{R}$, margin $\gamma$, regularisation term $\lambda_1, \lambda_2$ and embeddings dimension $k$.
-\begin{enumerate}
-\item \textbf{initialise} 
-\begin{description}
-\item $\bm{r} \leftarrow$ uniform $(-\frac{6}{\sqrt{k}}, \frac{6}{k})$ for each $\bm{r} \in \mathcal{R}$ 
-\item	$\bm{r} \leftarrow \bm{r} / \| \bm{r} \|$ for each $\bm{r} \in \mathcal{R}$
-\item $\bm{e} \leftarrow$ uniform $(-\frac{6}{\sqrt{k}}, \frac{6}{k})$ for each $\bm{e} \in \mathcal{E}$ 
-\item	$\bm{e} \leftarrow \bm{e} / \| \bm{e} \|$ for each $\bm{e} \in \mathcal{E}$
-\end{description}
+\subsection{Data sets}
+\subsubsection{Wordnet} is a large lexical database of English. It groups words into sets of cognitive synonyms (synsets) and interlink these synsets by means of a small number of semantic relations, such as \emph{synonymy}, \emph{antonymy}, \emph{meronymy} and \emph{hypernymy}.  For example, a typical triplet \emph{(\_range\_NN\_3, \_hypernym, \_tract\_NN\_1)} means the third meaning of the noun "range"  is a hypernym of the first sense of the noun "tract". We consider the data \emph{WN18} used in \cite{bordes_semantic_2014}, which contains 18 relational types.
 
-\item \textbf{loop}
-\begin{description}
-\item $\mathcal{D}_{batch} \leftarrow$ sample from $\mathcal{D}$ 	{\color{green} // sample a minibatch triplets of size b}
-\item $\mathcal{T}_{batch} \leftarrow \emptyset$  {\color{green} //  for storing the set of pairs of correct and corrupted triplets}
-\item \textbf{for} $(h,l,t) \in \mathcal{D}$ \textbf{do}
-\begin{description}
-\item $(h^{'},\ell,t^{'}) \leftarrow$ sample from $\mathcal{D}^{-}_{(h,l,t)}$ {\color{green} // sample a corrupted triplet}
-\item $\mathcal{T}_{batch} \leftarrow \mathcal{T}_{batch} \cup \{ ((h,\ell,t),(h^{'},\ell,t^{'})) \}$
-\end{description}
-\item \textbf{end for}
-\item $\mathcal{E} \leftarrow$  head and tail set of $\mathcal{T}_{batch}$
-\item $\mathcal{R} \leftarrow$  link set of $\mathcal{T}_{batch}$ 
-\item Updates embeddings w.r.t.  
-\begin{equation*}
-\sum_{(h, \ell, t),(h^{'},\ell,t^{'})\in  \mathcal{T}_{batch}} {[\gamma + \mathrm{E}(h,l,t)- \mathrm{E}(h^{'},\ell,t^{'}) ]_+}  +\lambda_1 \sum_{m \in \mathcal{E}} \left[\|\bm{e}_m\|_2^2 - 1\right]_+ + \lambda_2 \sum_{n \in \mathcal{R}} \| \bm{r}_{n} \|_2^2,
-\end{equation*}
+\subsubsection{Freebase} is a massive online collection database consisting of general human knowledge. It organised the human knowledge data  directly in the triplet form of \emph{(head, link, tail)}. Unlike the Wordnet database, it does not disambiguate the senses of each entity. Typical triplet example includes \emph{(Peasant Magic, /music/artist/album, Solipsitalism)}, \emph{(Barack Obama, /people/person/religion, Christianity)} and \emph{(Orange France, /organization/organization/place\_founded, Paris)}. FB15k \cite{bordes_learning_2011} is created by selecting the frequent occurrent entities and have been used for comparison with other algorithms in this paper.
 
-\end{description}
+\begin{table}[t]
+\caption{Statistics of data sets} \label{data}
+\centering
+\begin{tabular}[center]{|l |l l |} 
+ \hline
+Dataset & WN18 & FB15k \\
+ \hline 
+Relationships & $18$ & $1,345$ \\
+Entities & $40,943$ & $14,951$ \\
+Train & $141,442$ & $483,142$ \\
+Valid & $5,000$ & $50,000$ \\
+Test & $5,000$ & $59,071$ \\
+\hline
+ \end{tabular}
+ \end{table}
+ 
+\subsection{Evaluation}
+We compare the proposed algorithm with the state-of-art  methods on the WN18 and FB15k data set for link prediction. Essentially, every method trains a score function (or energy function in our case) to assemble the likely relations with a higher score (or lower energy) than the unlikely relations. This score function (energy function) corresponding to each model's trained parameters could thus gives its estimation of the likely score for every true triplets in the test set. Two evaluation metric \cite{bordes_learning_2011}, \emph{mean rank} and \emph{hits@10}, about measuring how well the predicted score matched with the true triple in the test set have been applied in our paper.
 
-\end{enumerate}
+\subsubsection{mean rank} for each correct triplet in the test set, we first construct the corrupt triples by replacing the head entity with all the entities in knowledge base in turn. The score (or energy) of these corrupted triples are computed by the model and have been sorted in descending (or ascending) order. The rank of the correct head entity is finally stored. This procedure is repeated by replacing the tail entity of the each triplet in the test set. The mean of all these predicted ranks  in the test set have been used as the \emph{mean rank} assessment.
 
-\end{algorithm}
+\subsubsection{hits@10} it is very biased by only utilising the \emph{mean rank} evaluation scheme. This is because that this evaluation scheme only cares about the dominant relationship related triples if the test data is heavily unbalanced with relation types, consequently,  other relation types' contribution to the \emph{mean rank} assessment have been ignored.  Thus, the proportion of the correct entities ranked within top $10$ have been reported as a supplemental evaluation indicator. In the model training, it is important to select the margin $\gamma$ for balancing the importance of each relationship, which could result a better $hits@10$ performance. 
+
+The ranking of each entity within these evaluation metric can be inaccurate when some corrupted triples turns out to be the correct ones in the knowledge graph. \cite{bordes_translating_2013} suggest that filtering out the corrupted triples which appears either in the training, validation or test set before ranking those entities.  We labeled the first evaluation metric as \emph{raw} and the later filtered evaluation metric as \emph{filtered}.
+
+\begin{table*}
+\caption{Evaluation Results on WN18 and FB15k} \label{result1}
+\centering
+\begin{tabular}[center]{| c | c  c  | c c | c   c | c  c |} 
+ \hline
+Dataset & \multicolumn{4}{c}{WN18} & \multicolumn{4}{|c|}{FB15k} \\
+\hline
+\multirow{2}{*}{Metric} & \multicolumn{2}{ c |}{Mean Rank} & \multicolumn{2}{c |}{Hits@10(\%)} & \multicolumn{2}{c |}{Mean Rank}  &  \multicolumn{2}{c|}{Hits@10(\%)}   \\ 
+\multicolumn{1}{|  c |}{} 	& 
+Raw & Filter & Raw & Filter& Raw & Filter &  Raw & Filter \\
+\hline
+Unstructured & $315$ & $304$ & $35.3$ & $38.2$ & $1,074$ & $979$ & $4.5$ & $6.3$ \\
+\hline
+RESCAL & $1,180$ & $1,163$ & $37.2$ & $52.8$ & $828$ & $683$ & $28.4$ & $44.1$ \\
+\hline
+SE & $1,011$ & $985$ & $68.5$ & $80.5$ & $273$ & $162$ & $28.8$ & $39.8$ \\
+\hline
+SME(linear) & $545$ & $533$ & $65.1$ & $74.1$ & $274$ & $154$ & $30.7$ & $40.8$ \\
+\hline
+SME(bilinear) & $526$ & $509$ & $54.7$ & $61.3$ & $284$ & $158$ & $31.3$ & $41.3$ \\
+\hline
+LFM & $469$ & $456$ & $71.4$ & $81.6$ & $283$ & $164$ & $26.0$ & $33.1$ \\
+\hline
+TransE & $263$ & $251$ & $75.4$ & $89.2$ & $243$ & $125$ & $34.9$ & $47.1$ \\
+\hline
+TransH & $318$ & $303$ & $75.4$ & $86.7$ & $211$ & $84$ & $42.5$ & $58.5$ \\
+\hline
+TransR & $232$ & $219$ & $78.3$ & $91.7$ & $226$ & $78$ & $43.8$ & $65.5$ \\
+\hline
+CTransR & $243$ & $230$ & $78.9$ & $92.3$ & $233$ & $82$ & $44$ & $66.3$ \\
+\hline
+TranPES & $223$ & $NA$ & $71.6$ & $NA$ & $\mathbf{198}$ & $\mathbf{66}$ & $\mathbf{48.05}$ & $\mathbf{67.3}$ \\
+\hline
+\end{tabular}
+
+\quad
+\caption{Detailed Evaluation on FB15k} \label{result2}
+\centering
+\begin{tabular}{| c | c  c  | c c | c   c | c  c |} 
+ \hline
+Tasks & \multicolumn{4}{ c |}{Predicting Head(Hits@10)} & \multicolumn{4}{c |}{Predicting Tail(Hits@10)}  \\ 
+\hline
+Relation Category	& 
+1-To-1 & 1-To-M & M-To-1 & M-To-M& 1-To-1 & 1-To-M &  M-To-1 & M-To-M \\
+\hline
+Unstructured & $34.5$ & $2.5$ & $6.1$ & $6.6$ & $34.3$ & $4.2$ & $1.9$ & $6.6$ \\
+\hline
+SE & $35.6$ & $62.6$ & $17.2$ & $37.5$ & $34.9$ & $14.6$ & $68.3$ & $41.3$ \\
+\hline
+SME(linear) & $35.1$ & $53.7$ & $19.0$ & $40.3$ & $32.7$ & $14.9$ & $61.6$ & $43.3$ \\
+\hline
+SME(bilinear) & $30.9$ & $69.6$ & $19.9$ & $38.6$ & $28.2$ & $13.1$ & $76.0$ & $41.8$ \\
+\hline
+TransE & $43.7$ & $65.7$ & $18.2$ & $47.2$ & $43.7$ & $19.7$ & $66.7$ & $50.0$ \\
+\hline
+TransH & $66.7$ & $81.7$ & $30.2$ & $57.4$ & $63.7$ & $30.1$ & $83.2$ & $60.8$ \\
+\hline
+TransR & $76.9$ & $77.9$ & $38.1$ & $66.9$ & $76.2$ & $38.4$ & $76.2$ & $69.1$ \\
+\hline
+CTransR & $\mathbf{78.6}$ & $77.8$ & $36.4$ & $\mathbf{68.0}$ & $77.4$ & $37.8$ & $78.0$ & $\mathbf{70.3}$ \\
+\hline
+TranPES & $78.0$ & $\mathbf{88.6}$ & $\mathbf{38.9}$ & $67.3$ & $\mathbf{78.9}$ & $\mathbf{42.1}$ & $\mathbf{84.2}$ & $69.8$ \\
+\hline
+\end{tabular}
+
+\end{table*}
+
+
+\subsection{Results}
+In the experimental phase, we direct compare our proposed models with those results reported in the literature  \cite{lin_learning_2015} as we are using the same data sets. For the experiments of the TranPES algorithm, we first identify the scale of each parameters by searching the learning rate among $\{ 0.1, 0.01, 0.002\}$, the dimensions of the entity and link embedding $k$ among $\{ 20, 50, 100 \}$, the scaling control factor $\lambda_1$ is assigned as a constant value $1$, batchsize $B$ among $\{50, 100, 200\}$, the regularisation parameter $\lambda_2$ among $\{ 1, 0.1, 0.01\}$ and the margin $\gamma$ among $\{0.5, 0.6, 0.7, 0.8, 0.9, 1.0\}$. The value of margin $\gamma$ is closely related to the $hits@10$ evaluation metric thus it is important to do a full searching for this parameter. For both datasets, we limit the epochs round at most 1000 times.  And we select the best model according to the best mean rank on the validation set.
+
+The optimal configuration were: $k=20, B = 100, \lambda_2=0.01, \gamma=0.7$ on WN18 and $k=100, B=100, \lambda_2 = 0.01, \gamma=0.4$ on FB15k. The evaluation results are present on Table. \ref{result1}.
+
+On the WN18 data set, it seems that the proposed algorithm does not perform better than even its simpler form of TransE algorithm. While on the more complex data set FB15k, the TranPES outperforms all the other algorithms.  The performances of TransR and TranPES is close on the FB15k, but the TranPES algorithm has much less parameters for the training(only $O(N_ek+N_rk)$).
+
+We followed the same detailed evaluation protocal proposed in \cite{bordes_translating_2013}. It classifies the $hits@10$ results according to the four categories each relationship belong to:  1-To-1, 1-To-Many, Many-To-1, Many-To-Many. For instance, a given relationship is classified in to 1-To-Many if a \emph{head} can appear with at many \emph{tails} and a \emph{tail} can appear with at most one \emph{head}.  The corresponding result was shown on Table. \ref{result2}. 
+
+As one would expect, it is approachable to predict \emph{head} in the 1-To-1, 1-To-Many  relationships and predict \emph{tail} in the 1-To-1, Many-To-1 relationship. This has been shown on the TranPES results subsequently. Upon successfully predicting these relationships, it shows the reasoning ability of TranPES algorithm.
+
+
+
+
 
 
 
