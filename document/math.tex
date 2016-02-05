@@ -16,10 +16,13 @@
 \begin{document}
 
 \title{Report for Relational Learning}
-\author{ Yu Wu, Nov. 2015
+\author{ Yu Wu, Feb. 2016
              }
 \maketitle
 
+\begin{abstract}
+xxxx
+\end{abstract}
 
 
 \section{Proposed Model}
@@ -28,7 +31,7 @@ The knowledge graph data $\mathcal{D}$ consists of a set of links between a fixe
 %For instance, $E(h, l, t)\geq c$ indicates there exists link $r_l$ between the entities $e_h$ and $e_t$ and $E(h, l, t)<c$ otherwise, where $c$ is a threshold. 
 
 \subsection{Energy Function}
-The proposed method  \emph{tranPES}  parameterises the energy function of an input relation triple over three individual $k$-dimensional embedding vectors of its head, tail and link, as well as as a set of $k\times k$ transformation matrices $\{\textbf{P}_{ht}\}_{h,t}$ where different matrices are constructed for different head-tail entity pairs $(h,t)$. Letting $\{\bm e_i\}_{i=1}^{N_e}$ denote the entity embedding vectors and  $\{\bm r_i\}_{i=1}^{N_r}$ the link embeddings, the \emph{tranPES} energy function is defined as the following:
+The proposed method  \emph{\emph{TranPES}}  parameterises the energy function of an input relation triple over three individual $k$-dimensional embedding vectors of its head, tail and link, as well as as a set of $k\times k$ transformation matrices $\{\textbf{P}_{ht}\}_{h,t}$ where different matrices are constructed for different head-tail entity pairs $(h,t)$. Letting $\{\bm e_i\}_{i=1}^{N_e}$ denote the entity embedding vectors and  $\{\bm r_i\}_{i=1}^{N_r}$ the link embeddings, the \emph{\emph{TranPES}} energy function is defined as the following:
 \begin{equation} \label{energy}
 \mathrm{E}{(h,\ell, t)} = \|\bm{e}_h +\textbf{P}_{ht} \bm{r}_{\ell}-\bm{e}_t\|_2.
 \end{equation}
@@ -97,7 +100,7 @@ Similar to the optimisation procedure used in \cite{bordes_translating_2013}, a 
 
 
 \begin{algorithm*}
-\caption{Learning TranPES }
+\caption{Learning \emph{TranPES} }
 \textbf{input} Training set $\mathcal{D} = \{(h,\ell,t)\}$, entities and rel. set $\mathcal{E}$ and $\mathcal{R}$, margin $\gamma$, regularisation term $\lambda_1, \lambda_2$ and embeddings dimension $k$.
 \begin{enumerate}
 \item \textbf{initialise} 
@@ -131,8 +134,16 @@ Similar to the optimisation procedure used in \cite{bordes_translating_2013}, a 
 
 \end{algorithm*}
 
+
 \subsection{Discussion}
-The proposed idea is inspired by the limitation of the energy function $\mathrm{E}{(h,\ell, t)} = \|\bm{e}_h + \bm{r}_{\ell}-\bm{e}_t\|_2^2$ of \emph{transE} \cite{bordes_translating_2013}  which is one of the most commonly used algorithm in relational learning.  For instances, considering the simple link of ``$isa$" in  the statement \emph{Bob Dylan was a song writer, singer, performer, book author and film actor}, the following relation triples can be generated from it:
+The proposed idea is inspired by the limitation of one of the most commonly used algorithm \emph{transE} \cite{bordes_translating_2013}  in relational learning. The Energy function of this model can be expressed in the following:
+\begin{equation}
+\mathrm{E}{(h,\ell, t)} = \|\bm{e}_h + \bm{r}_{\ell}-\bm{e}_t\|_2^2
+\end{equation}
+
+For any triplets of the form \{$(h, r_1, t)$, $(h, r_2, t)$, \ldots, $(h, r_m, t)$\}, the \emph{TransE}  and many other algorithms may result in all the relation types  \{ $r_1$, $r_2$, \ldots, $r_m$\} involved to be equal. As in the case of \emph{TransE} algorithm, it tends to converge all the relation vectors into the subtracting vecotr  $\bm{e}_h - \bm{e}_t$.  Example triples are $(Obama, presidentOf, USA)$, $(Obama, placeOfbirth, USA)$.
+
+ On the other hand, considering the simple link of ``$isa$" in  the statement \emph{Bob Dylan was a song writer, singer, performer, book author and film actor}, the following relation triples can be generated from it:
 \\
 \begin{tabular}[center]{l l l} 
  \\
@@ -143,14 +154,12 @@ The proposed idea is inspired by the limitation of the energy function $\mathrm{
   (\emph{BobDylan}, & \emph{isa}, & \emph{Performer}) \\
    (\emph{BobDylan}, & \emph{isa}, & \emph{BookAuthor }) \\
     (\emph{BobDylan}, & \emph{isa}, & \emph{FilmActor}) \\\\
- \end{tabular}\\
-Both \emph{transE} and many existing algorithms assign one unified embedding vector to represent the same link.  Since the learned energies of the valid triples  possess low values,  different entities such as song writer, singer and performer are  distributed very close to each other in the embedding space due to their closeness to the same embedding vector of  the link ``$isa$". Although there exist distinctions between the occupations represented by these entities, the learned embeddings are not able to highlight such distinction. To overcome this,  the proposed energy function  first projects the link embedding vector onto the hyperplane spanned by the two  entity embedding vectors, and then performs the distance computation within the hyperplane.  This subsequently results in different representations of the link when it gets involved with different entity pairs.  The energy function  $\mathrm{E}{(h,\ell, t)} = \|\textbf{P}_l\bm{e}_h + \bm{r}_{\ell}-\textbf{P}_l\bm{e}_t\|_2^2$ of \emph{transR} \cite{lin_learning_2015} is another one proposed to overcome the limitation of   \emph{transE}. It allows the entities and links to be distributed in different embedding spaces of dimensions $d$ and $k$, respectively, and  introduces a set of $ k\times d$ projection matrices $\{\textbf{P}_l\}_{l=1}^{N_r}$ to align the two spaces over each link. In a way, it fixes an embedding space for the links, and project each pair of the entities $(\bm{e}_h, \bm{e}_t)$ onto this space to further formulate the distance. For the same entity,  its final representation $\textbf{P}_l\bm{e}_h$ used for comparing distance  differs over different links. On the contrary, the proposed method allows various customised representations $\textbf{P}_{ht} \bm{r}_{\l}$ for a link to suit the needs of different entity pairs, but maintains the fixed embedding representation for the entities when comparing distance. This thus allows the opportunity to propagate the relation information through entities. For instance, we assume there exist entities $c_1,c_2, \ldots,d_1,d_2,\ldots, e_1, e_2, \ldots$ belonging to three classes of $C,D,E$ and the class structure can be reflected by the link information.   When the entities are projected in a same fixed space,  their embeddings are able to  show directly the within-class closeness and between-class dispersion in the same space, thus it is possible to  transfer the instance-based inference to the class-based inference e.g., from $(c_i, r_1, d_j) \wedge (d_j, r_2,, e_k) \Rightarrow  (c_i, r_3, e_k)$ to $(C, r_1, D)\wedge (D, r_2, E) \Rightarrow  (C, r_3, E)$.
+ \end{tabular}
+ 
+Both \emph{transE} and many other existing algorithms assign one unified representation for the link $r_{\ell}$ in all triplets.  Since the learned energies of the valid triples  possess low values,  different entities such as song writer, singer and performer are  distributed very close to each other in the embedding space due to their closeness to the same embedding vector of  the link ``$isa$". Although there exist distinctions between the occupations represented by these entities, the learned embeddings are not able to highlight such distinction. To overcome this,  the proposed energy function  first projects the link embedding vector onto the hyperplane spanned by the two  entity embedding vectors, and then performs the distance computation within the hyperplane.  This subsequently results in different representations of the link when it gets involved with different entity pairs.  
 
+The energy function  $\mathrm{E}{(h,\ell, t)} = \|\textbf{P}_l\bm{e}_h + \bm{r}_{\ell}-\textbf{P}_l\bm{e}_t\|_2^2$ of \emph{transR} \cite{lin_learning_2015} is another one proposed to overcome the limitation of   \emph{transE}. It allows the entities and links to be distributed in different embedding spaces of dimensions $d$ and $k$, respectively, and  introduces a set of $ k\times d$ projection matrices $\{\textbf{P}_l\}_{l=1}^{N_r}$ to align the two spaces over each link. In a way, it fixes an embedding space for the links, and project each pair of the entities $(\bm{e}_h, \bm{e}_t)$ onto this space to further formulate the distance. For the same entity,  its final representation $\textbf{P}_l\bm{e}_h$ used for comparing distance  differs over different links. On the contrary, the proposed method allows various customised representations $\textbf{P}_{ht} \bm{r}_{\l}$ for a link to suit the needs of different entity pairs, but maintains the fixed embedding representation for the entities when comparing distance. This thus allows the opportunity to propagate the relation information through entities. For instance, we assume there exist entities $c_1,c_2, \ldots,d_1,d_2,\ldots, e_1, e_2, \ldots$ belonging to three classes of $C,D,E$ and the class structure can be reflected by the link information.   When the entities are projected in a same fixed space,  their embeddings are able to  show directly the within-class closeness and between-class dispersion in the same space, thus it is possible to  transfer the instance-based inference to the class-based inference e.g., from $(c_i, r_1, d_j) \wedge (d_j, r_2,, e_k) \Rightarrow  (c_i, r_3, e_k)$ to $(C, r_1, D)\wedge (D, r_2, E) \Rightarrow  (C, r_3, E)$.
 
-
-%This model also permit to propagate information between triples as each entity are having the same representation over all different relation types. For instance, suppose that in the embeddings there are entities $c_1,c_2, \ldots,d_1,d_2,\ldots, e_1, e_2, \ldots$ belong to 3 classes $C,D,E$, and the enitities have been embedded very close within each class. If there are some triples with the relationship that both $(c_i, r_1, d_j), (d_j, r_2,, e_k)$ and $(c_i, r_3, e_k)$ are true, then the deterministic rules in the graph that if $(C, r_1, D), (D, r_2, E)$ holds then $(C, r_3, E)$ have to be true are learned if no conflicting information has involved.
-
-For evaluation, we use the same ranking procedure  as in \cite{bordes_learning_2011}. For each test triplet, the head is removed and replaced by each of the entities of the dictionary in turn. Dissimilarities (or energies) of those corrupted triplets are first computed by the models and then sorted by ascending order; the rank of the correct entity is finally stored. This whole procedure is repeated while removing the tail instead of the head. The \emph{mean} of those predicted ranks and the \emph{hit@10}, i.e. the proportion of correct entities ranked in the top $10$ are used for the evaluation.
 
 
 \section{Experiments}
@@ -197,27 +206,27 @@ Dataset & \multicolumn{4}{c}{WN18} & \multicolumn{4}{|c|}{FB15k} \\
 \multicolumn{1}{|  c |}{} 	& 
 Raw & Filter & Raw & Filter& Raw & Filter &  Raw & Filter \\
 \hline
-Unstructured & $315$ & $304$ & $35.3$ & $38.2$ & $1,074$ & $979$ & $4.5$ & $6.3$ \\
+Unstructured \cite{bordes_semantic_2014} & $315$ & $304$ & $35.3$ & $38.2$ & $1,074$ & $979$ & $4.5$ & $6.3$ \\
 \hline
-RESCAL & $1,180$ & $1,163$ & $37.2$ & $52.8$ & $828$ & $683$ & $28.4$ & $44.1$ \\
+RESCAL \cite{nickel_three-way_2011} & $1,180$ & $1,163$ & $37.2$ & $52.8$ & $828$ & $683$ & $28.4$ & $44.1$ \\
 \hline
-SE & $1,011$ & $985$ & $68.5$ & $80.5$ & $273$ & $162$ & $28.8$ & $39.8$ \\
+SE \cite{bordes_learning_2011} & $1,011$ & $985$ & $68.5$ & $80.5$ & $273$ & $162$ & $28.8$ & $39.8$ \\
 \hline
-SME(linear) & $545$ & $533$ & $65.1$ & $74.1$ & $274$ & $154$ & $30.7$ & $40.8$ \\
+SME(linear) \cite{bordes_semantic_2014} & $545$ & $533$ & $65.1$ & $74.1$ & $274$ & $154$ & $30.7$ & $40.8$ \\
 \hline
-SME(bilinear) & $526$ & $509$ & $54.7$ & $61.3$ & $284$ & $158$ & $31.3$ & $41.3$ \\
+SME(bilinear) \cite{bordes_semantic_2014}  & $526$ & $509$ & $54.7$ & $61.3$ & $284$ & $158$ & $31.3$ & $41.3$ \\
 \hline
-LFM & $469$ & $456$ & $71.4$ & $81.6$ & $283$ & $164$ & $26.0$ & $33.1$ \\
+LFM \cite{jenatton_latent_2012}  & $469$ & $456$ & $71.4$ & $81.6$ & $283$ & $164$ & $26.0$ & $33.1$ \\
 \hline
-TransE & $263$ & $251$ & $75.4$ & $89.2$ & $243$ & $125$ & $34.9$ & $47.1$ \\
+TransE \cite{bordes_translating_2013} & $263$ & $251$ & $75.4$ & $89.2$ & $243$ & $125$ & $34.9$ & $47.1$ \\
 \hline
-TransH & $318$ & $303$ & $75.4$ & $86.7$ & $211$ & $84$ & $42.5$ & $58.5$ \\
+TransH \cite{wang_knowledge_2014} & $318$ & $303$ & $75.4$ & $86.7$ & $211$ & $84$ & $42.5$ & $58.5$ \\
 \hline
-TransR & $232$ & $219$ & $78.3$ & $91.7$ & $226$ & $78$ & $43.8$ & $65.5$ \\
+TransR \cite{lin_learning_2015} & $232$ & $219$ & $78.3$ & $91.7$ & $226$ & $78$ & $43.8$ & $65.5$ \\
 \hline
-CTransR & $243$ & $230$ & $78.9$ & $92.3$ & $233$ & $82$ & $44$ & $66.3$ \\
+CTransR \cite{lin_learning_2015} & $243$ & $230$ & $78.9$ & $92.3$ & $233$ & $82$ & $44$ & $66.3$ \\
 \hline
-TranPES & $223$ & $NA$ & $71.6$ & $NA$ & $\mathbf{198}$ & $\mathbf{66}$ & $\mathbf{48.05}$ & $\mathbf{67.3}$ \\
+\emph{TranPES} & $223$ & $NA$ & $71.6$ & $NA$ & $\mathbf{198}$ & $\mathbf{66}$ & $\mathbf{48.05}$ & $\mathbf{67.3}$ \\
 \hline
 \end{tabular}
 
@@ -247,7 +256,7 @@ TransR & $76.9$ & $77.9$ & $38.1$ & $66.9$ & $76.2$ & $38.4$ & $76.2$ & $69.1$ \
 \hline
 CTransR & $\mathbf{78.6}$ & $77.8$ & $36.4$ & $\mathbf{68.0}$ & $77.4$ & $37.8$ & $78.0$ & $\mathbf{70.3}$ \\
 \hline
-TranPES & $78.0$ & $\mathbf{88.6}$ & $\mathbf{38.9}$ & $67.3$ & $\mathbf{78.9}$ & $\mathbf{42.1}$ & $\mathbf{84.2}$ & $69.8$ \\
+\emph{TranPES} & $78.0$ & $\mathbf{88.6}$ & $\mathbf{38.9}$ & $67.3$ & $\mathbf{78.9}$ & $\mathbf{42.1}$ & $\mathbf{84.2}$ & $69.8$ \\
 \hline
 \end{tabular}
 
@@ -255,21 +264,28 @@ TranPES & $78.0$ & $\mathbf{88.6}$ & $\mathbf{38.9}$ & $67.3$ & $\mathbf{78.9}$ 
 
 
 \subsection{Results}
-In the experimental phase, we direct compare our proposed models with those results reported in the literature  \cite{lin_learning_2015} as we are using the same data sets. For the experiments of the TranPES algorithm, we first identify the scale of each parameters by searching the learning rate among $\{ 0.1, 0.01, 0.002\}$, the dimensions of the entity and link embedding $k$ among $\{ 20, 50, 100 \}$, the scaling control factor $\lambda_1$ is assigned as a constant value $1$, batchsize $B$ among $\{50, 100, 200\}$, the regularisation parameter $\lambda_2$ among $\{ 1, 0.1, 0.01\}$ and the margin $\gamma$ among $\{0.5, 0.6, 0.7, 0.8, 0.9, 1.0\}$. The value of margin $\gamma$ is closely related to the $hits@10$ evaluation metric thus it is important to do a full searching for this parameter. For both datasets, we limit the epochs round at most 1000 times.  And we select the best model according to the best mean rank on the validation set.
+In the experimental phase, we direct compare our proposed models with those results reported in the literature  \cite{lin_learning_2015} as we are using the same data sets. For the experiments of the \emph{TranPES} algorithm, we first identify the scale of each parameters by searching the learning rate among $\{ 0.1, 0.01, 0.002\}$, the dimensions of the entity and link embedding $k$ among $\{ 20, 50, 100 \}$, the scaling control factor $\lambda_1$ is assigned as a constant value $1$, batchsize $B$ among $\{50, 100, 200\}$, the regularisation parameter $\lambda_2$ among $\{ 1, 0.1, 0.01\}$ and the margin $\gamma$ among $\{0.5, 0.6, 0.7, 0.8, 0.9, 1.0\}$. The value of margin $\gamma$ is closely related to the $hits@10$ evaluation metric thus it is important to do a full searching for this parameter. For both datasets, we limit the epochs round at most 1000 times.  And we select the best model according to the best mean rank on the validation set. An open-source implementation of \emph{TranPES} is availabe from the project webpage\footnote{\url{https://github.com/while519/TranPES.git}}.
 
 The optimal configuration were: $k=20, B = 100, \lambda_2=0.01, \gamma=0.7$ on WN18 and $k=100, B=100, \lambda_2 = 0.01, \gamma=0.4$ on FB15k. The evaluation results are present on Table. \ref{result1}.
 
-On the WN18 data set, it seems that the proposed algorithm does not perform better than even its simpler form of TransE algorithm. While on the more complex data set FB15k, the TranPES outperforms all the other algorithms.  The performances of TransR and TranPES is close on the FB15k, but the TranPES algorithm has much less parameters for the training(only $O(N_ek+N_rk)$).
+On the WN18 data set, it seems that the proposed algorithm does not perform better than even its simpler form of TransE algorithm. While on the more complex data set FB15k, the \emph{TranPES} outperforms all the other algorithms.  The performances of TransR and \emph{TranPES} is close on the FB15k, but the \emph{TranPES} algorithm has much less parameters for the training(only $O(N_ek+N_rk)$).
 
 We followed the same detailed evaluation protocal proposed in \cite{bordes_translating_2013}. It classifies the $hits@10$ results according to the four categories each relationship belong to:  1-To-1, 1-To-Many, Many-To-1, Many-To-Many. For instance, a given relationship is classified in to 1-To-Many if a \emph{head} can appear with at many \emph{tails} and a \emph{tail} can appear with at most one \emph{head}.  The corresponding result was shown on Table. \ref{result2}. 
 
-As one would expect, it is approachable to predict \emph{head} in the 1-To-1, 1-To-Many  relationships and predict \emph{tail} in the 1-To-1, Many-To-1 relationship. This has been shown on the TranPES results subsequently. Upon successfully predicting these relationships, it shows the reasoning ability of TranPES algorithm.
+As one would expect, it is approachable to predict \emph{head} in the 1-To-1, 1-To-Many  relationships and predict \emph{tail} in the 1-To-1, Many-To-1 relationship. This has been shown on the \emph{TranPES} results subsequently. Upon successfully predicting these relationships, it shows the reasoning ability of \emph{TranPES} algorithm.
 
 
 
 
+\section{Conclusion and Future Work}
+We present a relational latent feature model for embedding the objects (e.g. \emph{relations}, \emph{entities}) of the multi-relational data into a semantic vector space.  The operation (translation, projection .etc) between the vectors in this space has then been used to model the interactions within the multi-relational data. This developed algorithm, named \emph{TranPES}, can be viewed as an extension of the existing TransE algorithm. Comparing our approach with the existing algorithms on the complex FB15k knowledge database indicate that the \emph{TranPES} algroithm finds a better trade-offs between model complexity and model accuracy.
 
+Our idea was developed to amend the inappropriate assumptions of the simple TransE model to deal with some common pattern within the knowledge graph. For example, the simple triplets of $\emph{(Obama, bornIn, USA)}$ and $\emph{(Obama, presidentOf, USA)}$ would result in the collapse of the TransE's assumption, however, we still can express such triplets by modelling the interact in the way of our method.
 
+In the experiment, we have showed the powerful of the relational learning model for the link prediction tasks, specially, the 1-To-1, 1-To-Many, Many-To-1 relation types. But the successful of the reasoning mechanism within the knowledge graph has not been showed. Future work might study to learn the latent feature model as well as giving clues on how do the other triplets in the knowledge base contribute on the link prediction task.
+
+\section*{Acknowledgment}
+This research has been supported by the China Scholarships Council.
 
 \bibliographystyle{IEEEtran}
 \bibliography{My_Library}
