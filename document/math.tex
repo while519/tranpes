@@ -25,13 +25,24 @@ xxxx
 \end{abstract}
 
 \section{Introduction}
-Traditional machine learning algorithms usually works with data  which are described by its feature vector of attributes. While relational learning handles the data which are interlinked by various relation types. The multi-relational data can be referred as in the form of \emph{graph} whose nodes represent the entities and edges corresponds to the relationships. In particular, we considering the relational learning algorithm applied to the large-scale \emph{knowledge graphs}, which are constructed by the real-world things and their connections.  Examples of knowledge bases include Wordnet \cite{miller_wordnet:_1995}, YAGO \cite{suchanek_yago:_2007}, DBpedia \cite{lehmann_dbpedialarge-scale_2015}, Freebase \cite{bollacker_freebase:_2008}, NELL \cite{betteridge_toward_2009} and the Google Knowledge Vault \cite{dong_knowledge_2014}.  
+Traditional machine learning algorithms usually works with data  which are described by its feature vector of attributes. While relational learning handles the data which are interlinked by various relation types. The multi-relational data can be referred as in the form of \emph{graph} whose nodes represent the entities and edges corresponds to the relationships. In particular, we considering the relational learning algorithm applied to the large-scale \emph{knowledge graphs}, which are constructed by the real-world things and their connections.  Examples of knowledge bases include Wordnet \cite{miller_wordnet:_1995}, YAGO \cite{suchanek_yago:_2007}, DBpedia \cite{lehmann_dbpedialarge-scale_2015}, Freebase \cite{bollacker_freebase:_2008}, NELL \cite{betteridge_toward_2009} and the Google's Knowledge Vault project\cite{dong_knowledge_2014}.  These knowledge bases are very useful for information retrieval, question answering and other related AI tasks.
 
-Such knowledge graphs are very large, usually contain millions of nodes and billions of edges. This lead the knowledge graph very hard to construct and thus most databases are noisy and far from complete. Typical tasks of relational learning on knowledge bases include correcting the missing or invalid relations, identify the duplicate entities and link-based clustering. The 
+Such knowledge graphs are very large, usually contain millions of nodes and billions of edges. This lead the knowledge graph very hard to construct and thus most databases are noisy and far from complete. Typical tasks of relational learning on knowledge bases include correcting the missing or invalid relations, identify the duplicate entities and link-based clustering. 
+
+To work with these huge knowledge databases, there has arisen an effective approach which embedding the entities and relationships into a continuous vector space while the knowledge graph is modelled by subsequent geometric operations. Among them, \emph{TransE} \cite{bordes_translating_2013} is a highly promising model which has achieved very well performance with the minimal parametrisation. However, the assumption behind \emph{TransE} is too simple to adequately model the knowledge graphs. Recently, various other algorithms \cite{fan_transition-based_2014} \cite{wang_knowledge_2014} \cite{lin_learning_2015} \cite{garcia-duran_composing_????}  have been proposed to extend the \emph{TransE} model to explore for a more robust assumption. These algorithms have either extended the \emph{TransE} by   weighting adjustment scheme base on each relation types  or further making assumption that the interaction could only happen on the respective relation space for each relationship. 
+
+In this paper, we have proposed a method called Translating on Pairwise Entity Space(denoted as \emph{TranPES}),  which has put the entities and relationships into a unified vector space while only the relation vector's projection on the pairwise entity space get involved for modelling each entity pair related fact in the knowledge graphs. It has then been trained on a ranking objective using stochastic gradient decsent and we have compare it with other methods on the two commonly used data  of WordNet \cite{miller_wordnet:_1995} and Freebase \cite{bollacker_freebase:_2008} on the link prediction task.
+
+The remainder of this paper is organised as follow. In Section \ref{review}, we briefly review the previous work which following the knowledge graph embedding approach. The mathematical formulation for our model and the related discussion is presented in Section \ref{math}. Subsequent experiments are conducted in Section \ref{exp}. Finally, we draw the conclusion and discuss about the future direction in the last Section.
+
+\section{Related work} \label{review}
+Embedding knowledge bases into a distributed vector space have gained a great interest recently. Embedding-based model usually design various scoring function to measure the plausibility of each observable fact in the knowledge graph. And all models explain the confidence score via the assumed embeddings of entities. This idea of learning word embeddings  have been shown very successful in the natural language processing that such representations can store key information for each word and help to improve the performance on standard NLP tasks \cite{bengio_neural_2006}. 
 
 
-\section{Proposed Model}
-The knowledge graph data $\mathcal{D}$ consists of a set of links between a fixed set of entities. Let $\mathcal{E} = \{e_1, \ldots, e_{N_e}\}$ denote the entity set and $\mathcal{R} = \{r_1, \ldots, r_{N_r}\}$ the link set.  The relationship between entities indicated by $\mathcal{D}$ are represented as relation triples such as $(e_h,r_{\ell},e_t)$, where $e_h, e_t\in \mathcal{E}$ are referred as the head  and tail, respectively, and  $r_{\ell} \in \mathcal{R}$ the link.  For example, $(\emph{Champa}, \emph{formofgoverment}, \emph{Monarchy})$ is one of such relation triples which the head entity \emph{Champa} and the tail entity \emph{Monarchy} is linked by the relation type \emph{formofgoverment}.  For the sake of convenience of discussion, we simplified the relation triple as $(h,\ell, t)$   by referring only the indices of the entities and links. Given a set of known links within $\mathcal{D}$, the goal of a relational learning task is to  infer unknown links and correct the known links to complete the graph $\mathcal{D}$. One way to solve this task is to learn an energy function $E(h, \ell, t)$ on the set of all poosible triples $\mathcal{E} \times \mathcal{R} \times \mathcal{E}$ so that a triple representing a truly existing link between two entities  is assembled with a low energy, otherwise with high energy. 
+
+
+\section{Proposed Model} \label{math}
+The knowledge graph data $\mathcal{D}$ consists of a set of links between a fixed set of entities. Let $\mathcal{E} = \{e_1, \ldots, e_{N_e}\}$ denote the entity set and $\mathcal{R} = \{r_1, \ldots, r_{N_r}\}$ the link set.  The relationship between entities indicated by $\mathcal{D}$ are represented as relation triples such as $(e_h,r_{\ell},e_t)$, where $e_h, e_t\in \mathcal{E}$ are referred as the head  and tail, respectively, and  $r_{\ell} \in \mathcal{R}$ the link.  For example, $(\emph{Champa}, \emph{formOfgoverment}, \emph{Monarchy})$ is one of such relation triples which the head entity \emph{Champa} and the tail entity \emph{Monarchy} is linked by the relation type \emph{formOfgoverment}.  For the sake of convenience of discussion, we simplified the relation triple as $(h,\ell, t)$   by referring only the indices of the entities and links. Given a set of known links within $\mathcal{D}$, the goal of a relational learning task is to  infer unknown links and correct the known links to complete the graph $\mathcal{D}$. One way to solve this task is to learn an energy function $E(h, \ell, t)$ on the set of all possible triples $\mathcal{E} \times \mathcal{R} \times \mathcal{E}$ so that a triple representing a truly existing link between two entities  is assembled with a low energy, otherwise with high energy. 
 
 %For instance, $E(h, l, t)\geq c$ indicates there exists link $r_l$ between the entities $e_h$ and $e_t$ and $E(h, l, t)<c$ otherwise, where $c$ is a threshold. 
 
@@ -167,7 +178,7 @@ The energy function  $\mathrm{E}{(h,\ell, t)} = \|\textbf{P}_l\bm{e}_h + \bm{r}_
 
 
 
-\section{Experiments}
+\section{Experiments} \label{exp}
 To compare our proposed algorithm with various other methods from the literature, we evaluate our approach on the two typical knowledge base, WordNet \cite{miller_wordnet:_1995} and Freebase \cite{bollacker_freebase:_2008}. We listed some statistics of these data in Table \ref{data}.
 
 \subsection{Data sets}
@@ -193,12 +204,6 @@ Test & $5,000$ & $59,071$ \\
  
 \subsection{Evaluation}
 We compare the proposed algorithm with the state-of-art  methods on the WN18 and FB15k data set for link prediction. Essentially, every method trains a score function (or energy function in our case) to assemble the likely relations with a higher score (or lower energy) than the unlikely relations. This score function (energy function) corresponding to each model's trained parameters could thus gives its estimation of the likely score for every true triplets in the test set. Two evaluation metric \cite{bordes_learning_2011}, \emph{mean rank} and \emph{hits@10}, about measuring how well the predicted score matched with the true triple in the test set have been applied in our paper.
-
-\subsubsection{mean rank} for each correct triplet in the test set, we first construct the corrupt triples by replacing the head entity with all the entities in knowledge base in turn. The score (or energy) of these corrupted triples are computed by the model and have been sorted in descending (or ascending) order. The rank of the correct head entity is finally stored. This procedure is repeated by replacing the tail entity of the each triplet in the test set. The mean of all these predicted ranks  in the test set have been used as the \emph{mean rank} assessment.
-
-\subsubsection{hits@10} it is very biased by only utilising the \emph{mean rank} evaluation scheme. This is because that this evaluation scheme only cares about the dominant relationship related triples if the test data is heavily unbalanced with relation types, consequently,  other relation types' contribution to the \emph{mean rank} assessment have been ignored.  Thus, the proportion of the correct entities ranked within top $10$ have been reported as a supplemental evaluation indicator. In the model training, it is important to select the margin $\gamma$ for balancing the importance of each relationship, which could result a better $hits@10$ performance. 
-
-The ranking of each entity within these evaluation metric can be inaccurate when some corrupted triples turns out to be the correct ones in the knowledge graph. \cite{bordes_translating_2013} suggest that filtering out the corrupted triples which appears either in the training, validation or test set before ranking those entities.  We labeled the first evaluation metric as \emph{raw} and the later filtered evaluation metric as \emph{filtered}.
 
 \begin{table*}
 \caption{Evaluation Results on WN18 and FB15k} \label{result1}
@@ -231,7 +236,7 @@ TransR \cite{lin_learning_2015} & $232$ & $219$ & $78.3$ & $91.7$ & $226$ & $78$
 \hline
 CTransR \cite{lin_learning_2015} & $243$ & $230$ & $78.9$ & $92.3$ & $233$ & $82$ & $44$ & $66.3$ \\
 \hline
-\emph{TranPES} & $223$ & $NA$ & $71.6$ & $NA$ & $\mathbf{198}$ & $\mathbf{66}$ & $\mathbf{48.05}$ & $\mathbf{67.3}$ \\
+\emph{TranPES} & $223$ & $212$ & $71.6$ & $81.3$ & $\mathbf{198}$ & $\mathbf{66}$ & $\mathbf{48.05}$ & $\mathbf{67.3}$ \\
 \hline
 \end{tabular}
 
@@ -267,6 +272,12 @@ CTransR & $\mathbf{78.6}$ & $77.8$ & $36.4$ & $\mathbf{68.0}$ & $77.4$ & $37.8$ 
 
 \end{table*}
 
+\subsubsection{mean rank} for each correct triplet in the test set, we first construct the corrupt triples by replacing the head entity with all the entities in knowledge base in turn. The score (or energy) of these corrupted triples are computed by the model and have been sorted in descending (or ascending) order. The rank of the correct head entity is finally stored. This procedure is repeated by replacing the tail entity of the each triplet in the test set. The mean of all these predicted ranks  in the test set have been used as the \emph{mean rank} assessment.
+
+\subsubsection{hits@10} it is very biased by only utilising the \emph{mean rank} evaluation scheme. This is because that this evaluation scheme only cares about the dominant relationship related triples if the test data is heavily unbalanced with relation types, consequently,  other relation types' contribution to the \emph{mean rank} assessment have been ignored.  Thus, the proportion of the correct entities ranked within top $10$ have been reported as a supplemental evaluation indicator. In the model training, it is important to select the margin $\gamma$ for balancing the importance of each relationship, which could result a better $hits@10$ performance. 
+
+The ranking of each entity within these evaluation metric can be inaccurate when some corrupted triples turns out to be the correct ones in the knowledge graph. \cite{bordes_translating_2013} suggest that filtering out the corrupted triples which appears either in the training, validation or test set before ranking those entities.  We labeled the first evaluation metric as \emph{raw} and the later filtered evaluation metric as \emph{filtered}.
+
 
 \subsection{Results}
 In the experimental phase, we direct compare our proposed models with those results reported in the literature  \cite{lin_learning_2015} as we are using the same data sets. For the experiments of the \emph{TranPES} algorithm, we first identify the scale of each parameters by searching the learning rate among $\{ 0.1, 0.01, 0.002\}$, the dimensions of the entity and link embedding $k$ among $\{ 20, 50, 100 \}$, the scaling control factor $\lambda_1$ is assigned as a constant value $1$, batchsize $B$ among $\{50, 100, 200\}$, the regularisation parameter $\lambda_2$ among $\{ 1, 0.1, 0.01\}$ and the margin $\gamma$ among $\{0.5, 0.6, 0.7, 0.8, 0.9, 1.0\}$. The value of margin $\gamma$ is closely related to the $hits@10$ evaluation metric thus it is important to do a full searching for this parameter. For both datasets, we limit the epochs round at most 1000 times.  And we select the best model according to the best mean rank on the validation set. An open-source implementation of \emph{TranPES} is availabe from the project webpage\footnote{\url{https://github.com/while519/TranPES.git}}.
@@ -282,7 +293,7 @@ As one would expect, it is approachable to predict \emph{head} in the 1-To-1, 1-
 
 
 
-\section{Conclusion and Future Work}
+\section{Conclusion and Future Work} \label{conclusion}
 We present a relational latent feature model for embedding the objects (e.g. \emph{relations}, \emph{entities}) of the multi-relational data into a semantic vector space.  The operation (translation, projection .etc) between the vectors in this space has then been used to model the interactions within the multi-relational data. This developed algorithm, named \emph{TranPES}, can be viewed as an extension of the existing TransE algorithm. Comparing our approach with the existing algorithms on the complex FB15k knowledge database indicate that the \emph{TranPES} algroithm finds a better trade-offs between model complexity and model accuracy.
 
 Our idea was developed to amend the inappropriate assumptions of the simple TransE model to deal with some common pattern within the knowledge graph. For example, the simple triplets of $\emph{(Obama, bornIn, USA)}$ and $\emph{(Obama, presidentOf, USA)}$ would result in the collapse of the TransE's assumption, however, we still can express such triplets by modelling the interact in the way of our method.
