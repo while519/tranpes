@@ -21,7 +21,7 @@
 \maketitle
 
 \begin{abstract}
-xxxx
+In this paper, we have studied the problem of embedding entity and relations of the multi-relational data into one unified vector space which preserves certain information within the data and can then be used to predict the new relations between the entities. Inspired by the one existing work, \emph{TransE} \cite{bordes_translating_2013}, we have proposed an algorithm which models each fact by treating the projected relation type vector as a translation operation on the pairwise entity space. We have performed the link prediction task on two large benchmark knowledge base dataset. The experiment show that proposed algorithm pose a significant improvement over  \emph{TransE}.
 \end{abstract}
 
 \section{Introduction}
@@ -36,7 +36,8 @@ In this paper, we have proposed a method called Translating on Pairwise Entity S
 The remainder of this paper is organised as follow. In Section \ref{review}, we briefly review the previous work which following the knowledge graph embedding approach. The mathematical formulation for our model and the related discussion is presented in Section \ref{math}. Subsequent experiments are conducted in Section \ref{exp}. Finally, we draw the conclusion and discuss about the future direction in the last Section.
 
 \section{Related work} \label{review}
-Embedding knowledge bases into a distributed vector space have gained a great interest recently. Embedding-based model usually design various scoring function to measure the plausibility of each observable fact in the knowledge graph. And all models explain the confidence score via the assumed embeddings of entities. This idea of learning word embeddings  have been shown very successful in the natural language processing that such representations can store key information for each word and help to improve the performance on standard NLP tasks \cite{bengio_neural_2006}. 
+Embedding knowledge bases into a distributed vector space have gained a great interest recently. Embedding-based model usually design various scoring function to measure the plausibility of each observable fact in the knowledge graph. And all models explain the confidence score via the assumed embeddings of entities. Indeed, this idea of learning word embeddings  have been shown very successful in the natural language processing that such representations can store key information for each word and help to improve the performance on standard NLP tasks \cite{bengio_neural_2006}.  Depending on the representation learning methods, the embedding-based model can be classified into tensor/matrix factorisation \cite{singh_relational_2008} \cite{nickel_three-way_2011}, Bayesian clustering framework \cite{kemp_learning_2006} \cite{sutskever_modelling_2009} and neural networks \cite{bordes_learning_2011} \cite{jenatton_latent_2012} \cite{bordes_translating_2013} \cite{socher_reasoning_2013} \cite{bordes_semantic_2014} \cite{wang_knowledge_2014} \cite{lin_learning_2015} \cite{garcia-duran_composing_????}. We focusing on the neural network model as they are highly scalable and in particular the \emph{TransE} \cite{bordes_translating_2013} algorithm. The \emph{TransE} algorithm makes a simple assumption that regards the relation type as a translation operation on the embedded entity vectors. Such a simple assumption has led to the \emph{TransE} algorithm significantly outperforms state-of-art methods on link prediction tasks. A lot of works \cite{fan_transition-based_2014} \cite{wang_knowledge_2014} \cite{lin_learning_2015} \cite{garcia-duran_composing_????}  based on \emph{TransE} have been proposed and have gained better performance. By taking the advantage of the translation operation introduced by \emph{TransE}, we propose a novel approach that limit the translation operation conducted only on the entity pair hyperplane and tries to learn represent the different features of relationships into different subspaces.
+
 
 
 
@@ -179,7 +180,7 @@ The energy function  $\mathrm{E}{(h,\ell, t)} = \|\textbf{P}_l\bm{e}_h + \bm{r}_
 
 
 \section{Experiments} \label{exp}
-To compare our proposed algorithm with various other methods from the literature, we evaluate our approach on the two typical knowledge base, WordNet \cite{miller_wordnet:_1995} and Freebase \cite{bollacker_freebase:_2008}. We listed some statistics of these data in Table \ref{data}.
+To compare our proposed algorithm with various other methods from the literature, we evaluate our approach on the two typical knowledge base, Wordnet \cite{miller_wordnet:_1995} and Freebase \cite{bollacker_freebase:_2008}. We listed some statistics of these data in Table \ref{data}.
 
 \subsection{Data sets}
 \subsubsection{Wordnet} is a large lexical database of English. It groups words into sets of cognitive synonyms (synsets) and interlink these synsets by means of a small number of semantic relations, such as \emph{synonymy}, \emph{antonymy}, \emph{meronymy} and \emph{hypernymy}.  For example, a typical triplet \emph{(\_range\_NN\_3, \_hypernym, \_tract\_NN\_1)} means the third meaning of the noun "range"  is a hypernym of the first sense of the noun "tract". We consider the data \emph{WN18} used in \cite{bordes_semantic_2014}, which contains 18 relational types.
@@ -234,9 +235,9 @@ TransH \cite{wang_knowledge_2014} & $318$ & $303$ & $75.4$ & $86.7$ & $211$ & $8
 \hline
 TransR \cite{lin_learning_2015} & $232$ & $219$ & $78.3$ & $91.7$ & $226$ & $78$ & $43.8$ & $65.5$ \\
 \hline
-CTransR \cite{lin_learning_2015} & $243$ & $230$ & $78.9$ & $92.3$ & $233$ & $82$ & $44$ & $66.3$ \\
+CTransR \cite{lin_learning_2015} & $243$ & $230$ & $\mathbf{78.9}$ & $\mathbf{92.3}$ & $233$ & $82$ & $44$ & $66.3$ \\
 \hline
-\emph{TranPES} & $223$ & $212$ & $71.6$ & $81.3$ & $\mathbf{198}$ & $\mathbf{66}$ & $\mathbf{48.05}$ & $\mathbf{67.3}$ \\
+\emph{TranPES} & $\mathbf{223}$ & $\mathbf{212}$ & $71.6$ & $81.3$ & $\mathbf{198}$ & $\mathbf{66}$ & $\mathbf{48.05}$ & $\mathbf{67.3}$ \\
 \hline
 \end{tabular}
 
@@ -284,7 +285,7 @@ In the experimental phase, we direct compare our proposed models with those resu
 
 The optimal configuration were: $k=20, B = 100, \lambda_2=0.01, \gamma=0.7$ on WN18 and $k=100, B=100, \lambda_2 = 0.01, \gamma=0.4$ on FB15k. The evaluation results are present on Table. \ref{result1}.
 
-On the WN18 data set, it seems that the proposed algorithm does not perform better than even its simpler form of TransE algorithm. While on the more complex data set FB15k, the \emph{TranPES} outperforms all the other algorithms.  The performances of TransR and \emph{TranPES} is close on the FB15k, but the \emph{TranPES} algorithm has much less parameters for the training(only $O(N_ek+N_rk)$).
+On the WN18 data set, it seems that the proposed algorithm does not perform better than even its simpler form of TransE algorithm. While on the more complex data set FB15k, the \emph{TranPES} outperforms all the other algorithms.  The performances of \emph{TransR} and \emph{TranPES} is close on the FB15k, but the \emph{TranPES} algorithm has much less parameters for the training(only $O(N_ek+N_rk)$).
 
 We followed the same detailed evaluation protocal proposed in \cite{bordes_translating_2013}. It classifies the $hits@10$ results according to the four categories each relationship belong to:  1-To-1, 1-To-Many, Many-To-1, Many-To-Many. For instance, a given relationship is classified in to 1-To-Many if a \emph{head} can appear with at many \emph{tails} and a \emph{tail} can appear with at most one \emph{head}.  The corresponding result was shown on Table. \ref{result2}. 
 
