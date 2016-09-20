@@ -5,7 +5,7 @@ import numpy as np
 import scipy.sparse as sp
 import theano
 import sys
-sys.path.append('/home/yuwu/code/tranpes/')       # root directory
+sys.path.append('/volatile/yuwu/git-repo/tranpes/')       # root directory
 from model import *
 import math
 import time
