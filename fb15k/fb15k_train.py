@@ -5,7 +5,7 @@ import numpy as np
 import scipy.sparse as sp
 import theano
 import sys
-sys.path.append('/volatile/yuwu/git-repo/tranpes/')       # root directory
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from model import *
 import math
 import time
@@ -148,7 +148,7 @@ def FB15kexp(state):
     lembedding = Embeddings(np.random, state.ndim, state.Nbrel, 'Labels Embedding')
     embeddings = [embedding, lembedding]
     simfn = eval(state.simfn + 'sim')
-    
+
 
     # Function compilation
     TranPES = create_TrainFunc_tranPES(simfn, embeddings, marge=state.marge, alpha=state.alpha, beta=state.beta)
@@ -184,7 +184,7 @@ def FB15kexp(state):
             out += [outtmp[0]/batchsize]
             outb += [outtmp[1]]
             outc += [outtmp[2]]
-            
+
             #embeddings[0].normalize()
 
         print('-- EPOCH %s (%s seconds per epoch):' % (epoch_count, (time.time() - timeref)))
