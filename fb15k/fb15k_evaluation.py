@@ -416,5 +416,5 @@ def RankingEvalf():
         #         len(dictrelres[i][0] + dictrelres[i][1])))
 
 if __name__ == '__main__':
-    #evaluation()
+    evaluation()
     RankingEvalf()
