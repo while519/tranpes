@@ -4,7 +4,7 @@ import pickle
 import scipy.sparse as sp
 import copy
 
-sys.path.append('/git-repo/yuwu/git-repo/tranpes')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from model import *
 import time
 
