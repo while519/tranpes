@@ -99,7 +99,7 @@ def evaluation():
     state = pickle.load(f)
     f.close()
 
-    state.neval = 10
+    state.neval = 1000
     state.bestvalid = -1
     print(state)
 
