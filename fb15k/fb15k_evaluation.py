@@ -1,4 +1,5 @@
 #! /usr/bin/python
+import os
 import sys
 import pickle
 import scipy.sparse as sp
