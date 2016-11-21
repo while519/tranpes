@@ -99,7 +99,7 @@ def evaluation():
     state = pickle.load(f)
     f.close()
 
-    state.neval = 1000
+    state.neval = 10
     state.bestvalid = -1
     print(state)
 
@@ -175,6 +175,7 @@ def evaluation():
 
          timeref = time.time()
          resvalid = RankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
+         print('the evaluation took %s' % (time.time() - timeref))
          fresvalid = FilteredRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx, true_triples)
          print('the evaluation took %s' % (time.time() - timeref))
 
