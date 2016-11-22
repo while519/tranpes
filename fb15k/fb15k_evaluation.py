@@ -214,10 +214,10 @@ def evaluation():
 
     timeref = time.time()
     #res = PRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
-    res = FilteredPRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt, true_triples)
+    fres = FilteredPRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt, true_triples)
     #res = PRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt)
     print('the evaluation took %s' % (time.time() - timeref))
-    output('test_' + state.bestmodel, res, n)
+    output('test_' + state.bestmodel, fres, n)
 
     f = open('Filtered_eval.pkl', 'wb')
     pickle.dump(fres, f, -1)
