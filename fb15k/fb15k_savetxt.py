@@ -118,7 +118,7 @@ relation_np = relation_T.E.eval()
 
 
 f = open(state.bestmodel + '_true_triplets.txt', 'wb')
-np.savetxt(f,true_triples)
+np.savetxt(f,true_triples, '%d')
 f.close()
 
 f = open(state.bestmodel + '_embedding.txt', 'wb')
@@ -130,15 +130,15 @@ np.savetxt(f,relation_np)
 f.close()
 
 f = open(state.bestmodel + '_idxth.txt', 'wb')
-np.savetxt(f, idxth)
+np.savetxt(f, idxth, '%d')
 f.close()
 
 f = open(state.bestmodel + '_idxtl.txt', 'wb')
-np.savetxt(f, idxtl)
+np.savetxt(f, idxtl, '%d')
 f.close()
 
 f = open(state.bestmodel + '_idxtt.txt', 'wb')
-np.savetxt(f, idxtt)
+np.savetxt(f, idxtt, '%d')
 f.close()
 
 print('saved sucessfully...')
