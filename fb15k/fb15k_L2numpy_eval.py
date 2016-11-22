@@ -7,11 +7,12 @@ from joblib import Parallel, delayed
 from numpy.linalg import solve, inv
 import numpy as np
 import time
+import pickle
 
 
 # In[25]:
 
-bestmodel = 'model490'
+bestmodel = 'model480'
 n = 10
 neval = 100
 np.random.seed(123)
@@ -108,12 +109,17 @@ def hitn(lis):
 num_cores = multiprocessing.cpu_count()
 print(num_cores)
 timeref = time.time()
-if neval is not None:
+if neval is None:
     results = Parallel(n_jobs=num_cores, max_nbytes=1e7)(delayed(FilteredPNerrht)(embedding_np, relation_np, h, r, t, true_triples, 14951) for h, r, t in zip(idxth, idxtl, idxtt))
 else:
     results = Parallel(n_jobs=num_cores, max_nbytes=1e7)(delayed(FilteredPNerrht)(embedding_np, relation_np, h, r, t, true_triples, 14951) for h, r, t in zip(idxth[:neval], idxtl[:neval], idxtt[:neval]))
 fres = list(zip(*results))
 print('the evaluation took %s' % (time.time() - timeref))
+
+f = open('Filtered_eval.pkl', 'wb')
+pickle.dump(fres, f, -1)
+f.close()
+
 output('test_' + bestmodel, fres, n)
 
 idx2cat = {}
