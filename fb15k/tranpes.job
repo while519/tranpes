@@ -1,0 +1,12 @@
+#! /bin/csh
+#$ -cwd -V
+#$ -M yuwu@liv.ac.uk
+#$ -m abe
+#$ -r y
+#$ -o tmp.out
+#$ -e tmp.err
+module purge
+module load python/3.3
+echo "Start - `date`"
+python main.py
+echo "Finish - `date`"

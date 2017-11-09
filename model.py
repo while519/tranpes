@@ -135,7 +135,7 @@ def PRankingScoreIdx( sh, st, idxh, idxr, idxt):
         """
     num_cores = multiprocessing.cpu_count()
     
-    results = Parallel(n_jobs=1, verbose=11)(delayed(errht)(sh, st, h, r, t) for h, r, t in zip(idxh, idxr, idxt))
+    results = Parallel(n_jobs=num_cores)(delayed(errht)(sh, st, h, r, t) for h, r, t in zip(idxh, idxr, idxt))
     errh, errt = zip(*results)
     
     return errh, errt
@@ -160,6 +160,73 @@ def RankingScoreIdx(sh, st, idxh, idxr, idxt):
             st(h, r)).flatten())[::-1]).flatten()[t] + 1]
     return errh, errt
 
+def FilteredRankingScoreIdx(sh, st, idxh, idxr, idxt, true_triples):
+    """
+    This function computes the rank list of the hs and ts, over a list of
+    hs, rs and ts indexes.
+
+    :param sh: Theano function created with RankHeadFnIdx().
+    :param st: Theano function created with RankTailFnIdx().
+    :param idxh: list of 'head' indices.
+    :param idxt: list of 'tail' indices.
+    :param idxr: list of relation indices.
+    """
+    errh = []
+    errt = []
+    for h, r, t in zip(idxh, idxr, idxt):
+        ih = np.argwhere(true_triples[:, 0] == h).flatten()
+        ir = np.argwhere(true_triples[:, 1] == r).flatten()
+        it = np.argwhere(true_triples[:, 2] == t).flatten()
+
+        inter_h = [i for i in ir if i in it]
+        rmvhidx = [true_triples[i, 0] for i in inter_h if true_triples[i,0] != h]
+        score_h = sh(r,t).flatten()
+        score_h[rmvhidx] = -np.inf
+        errh += [np.argsort(np.argsort( -score_h )).flatten()[h] + 1]
+
+        inter_t = [i for i in ih if i in ir]
+        rmvtidx = [true_triples[i, 2] for i in inter_t if true_triples[i, 2] !=t]
+        score_t = st(h,r).flatten()
+        score_t[rmvtidx] = -np.inf
+        errt += [np.argsort(np.argsort( -score_t )).flatten()[t] + 1]
+    return errh, errt
+
+def Filterederrht(sh, st, h, r, t, true_triples):
+    ih = np.argwhere(true_triples[:, 0] == h).flatten()
+    ir = np.argwhere(true_triples[:, 1] == r).flatten()
+    it = np.argwhere(true_triples[:, 2] == t).flatten()
+
+    inter_h = [i for i in ir if i in it]
+    rmvhidx = [true_triples[i, 0] for i in inter_h if true_triples[i,0] != h]
+    score_h = sh(r,t).flatten()
+    score_h[rmvhidx] = -np.inf
+    result1 = [np.argsort(np.argsort( -score_h )).flatten()[h] + 1]
+
+    inter_t = [i for i in ih if i in ir]
+    rmvtidx = [true_triples[i, 2] for i in inter_t if true_triples[i, 2] !=t]
+    score_t = st(h,r).flatten()
+    score_t[rmvtidx] = -np.inf
+    result2 = [np.argsort(np.argsort( -score_t )).flatten()[t] + 1]
+
+    return result1, result2
+
+def FilteredPRankingScoreIdx( sh, st, idxh, idxr, idxt, true_triples):
+    """
+        This function computes the rank list of the hs and ts, over a list of
+        hs, rs and ts indexes.
+
+        :param sh: Theano function created with RankHeadFnIdx().
+        :param st: Theano function created with RankTailFnIdx().
+        :param idxh: list of 'head' indices.
+        :param idxt: list of 'tail' indices.
+        :param idxr: list of relation indices.
+        """
+    num_cores = multiprocessing.cpu_count()
+
+    results = Parallel(n_jobs=num_cores)(delayed(Filterederrht)(sh, st, h, r, t, true_triples) for h, r, t in zip(idxh, idxr, idxt))
+    errh, errt = zip(*results)
+
+    return errh, errt
 
 class Embeddings():
     def __init__(self, rng, D, N, tag=''):

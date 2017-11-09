@@ -4,7 +4,7 @@ import pickle
 import scipy.sparse as sp
 import copy
 
-sys.path.append('/git-repo/yuwu/git-repo/tranpes')
+sys.path.append('/home/yuwu/code/tranpes')
 from model import *
 import time
 
@@ -48,18 +48,6 @@ def convert2idx(spmat):
     rows, cols = spmat.nonzero()
     return rows[np.argsort(cols)]
 
-def convert2label(avghl, avgtl):
-    if avghl <= 1.5:
-        strt = '1'
-    else:
-        strt = 'Many'
-
-    if avgtl <= 1.5:
-        strh = '1'
-    else:
-        strh = 'Many'
-    return '-To-'.join((strh, strt))
-
 
 def output(model, res, n):
     dres = {}
@@ -87,10 +75,6 @@ def output(model, res, n):
     return
 
 
-def hitn(lis):
-    return np.mean(np.asarray(lis, dtype=np.int32) <=10)*100
-
-
 # ----------------------------------------------------------------------------------------------------------------------
 def evaluation():
     n = 10
@@ -98,7 +82,7 @@ def evaluation():
     state = pickle.load(f)
     f.close()
 
-    state.neval = 10
+    state.neval = 1000
     state.bestvalid = -1
     print(state)
 
@@ -106,27 +90,27 @@ def evaluation():
     np.random.seed(state.seed)
 
     # Positives
-    trainhmat = load_pkl(state.datapath + 'FB15k-train-hs.pkl')
-    trainlmat = load_pkl(state.datapath + 'FB15k-train-ls.pkl')
-    traintmat = load_pkl(state.datapath + 'FB15k-train-ts.pkl')
+    trainhmat = load_pkl(state.datapath + 'WN-train-hs.pkl')
+    trainlmat = load_pkl(state.datapath + 'WN-train-ls.pkl')
+    traintmat = load_pkl(state.datapath + 'WN-train-ts.pkl')
     if state.op == 'tranPES':
         trainhmat = trainhmat[:state.Nbsyn, :]
         trainlmat = trainlmat[-state.Nbrel:, :]
         traintmat = traintmat[:state.Nbsyn, :]
 
     # Valid set
-    validhmat = load_pkl(state.datapath + 'FB15k-valid-hs.pkl')
-    validlmat = load_pkl(state.datapath + 'FB15k-valid-ls.pkl')
-    validtmat = load_pkl(state.datapath + 'FB15k-valid-ts.pkl')
+    validhmat = load_pkl(state.datapath + 'WN-valid-hs.pkl')
+    validlmat = load_pkl(state.datapath + 'WN-valid-ls.pkl')
+    validtmat = load_pkl(state.datapath + 'WN-valid-ts.pkl')
     if state.op == 'tranPES':
         validhmat = validhmat[:state.Nbsyn, :]
         validlmat = validlmat[-state.Nbrel:, :]
         validtmat = validtmat[:state.Nbsyn, :]
 
     # Test set
-    testhmat = load_pkl(state.datapath + 'FB15k-test-hs.pkl')
-    testlmat = load_pkl(state.datapath + 'FB15k-test-ls.pkl')
-    testtmat = load_pkl(state.datapath + 'FB15k-test-ts.pkl')
+    testhmat = load_pkl(state.datapath + 'WN-test-hs.pkl')
+    testlmat = load_pkl(state.datapath + 'WN-test-ls.pkl')
+    testtmat = load_pkl(state.datapath + 'WN-test-ts.pkl')
     if state.op == 'tranPES':
         testhmat = testhmat[:state.Nbsyn, :]
         testlmat = testlmat[-state.Nbrel:, :]
@@ -162,9 +146,8 @@ def evaluation():
     simfn = eval(state.simfn + 'sim')
 
 
-    for model in ['model400', 'model410', 'model420', 'model430', 'model440', 'model450', 'model460', 'model470',
-                   'model480',
-                   'model490', 'model500']:
+    for model in ['model900', 'model910', 'model920', 'model930', 'model940', 'model950', 'model960', 'model970',
+                   'model980', 'model990', 'model1000']:
          f = open(state.savepath + '/' + model + '.pkl', 'rb')
          embeddings = pickle.load(f)
          f.close()
@@ -173,14 +156,12 @@ def evaluation():
          ranktfunc = RankTailFnIdx(simfn, embeddings, subtensorspec=state.Nbsyn)
 
          timeref = time.time()
-         resvalid = RankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
-         fresvalid = FilteredRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx, true_triples)
+         resvalid = PRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
          print('the evaluation took %s' % (time.time() - timeref))
 
          state.valid = np.mean(resvalid[0] + resvalid[1])
          if state.bestvalid == -1 or state.valid < state.bestvalid:
              output('valid_' + model, resvalid, n)
-             output('Filteredvalid' + model, fresvalid, n)
              restest = PRankingScoreIdx(rankhfunc, ranktfunc, testhidx, testlidx, testtidx)
              restrain = PRankingScoreIdx(rankhfunc, ranktfunc, trainhidx, trainlidx, traintidx)
              state.bestvalid = state.valid
@@ -213,123 +194,11 @@ def evaluation():
 
     timeref = time.time()
     #res = PRankingScoreIdx(rankhfunc, ranktfunc, validhidx, validlidx, validtidx)
-    res = FilteredPRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt, true_triples)
-    #res = PRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt)
+    res = PRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt)
     print('the evaluation took %s' % (time.time() - timeref))
     output('test_' + state.bestmodel, res, n)
 
-    f = open('Filtered_eval.pkl', 'wb')
-    pickle.dump(fres, f, -1)
-    f.close()
 
-
-def RankingEvalf():
-    n = 10
-    f = open('best_state.pkl', 'rb')
-    state = pickle.load(f)
-    f.close()
-    print(state)
-
-    np.random.seed(state.seed)
-
-    # Positives
-    trainhmat = load_pkl(state.datapath + 'FB15k-train-hs.pkl')
-    trainlmat = load_pkl(state.datapath + 'FB15k-train-ls.pkl')
-    traintmat = load_pkl(state.datapath + 'FB15k-train-ts.pkl')
-    if state.op == 'tranPES':
-        trainhmat = trainhmat[:state.Nbsyn, :]
-        trainlmat = trainlmat[-state.Nbrel:, :]
-        traintmat = traintmat[:state.Nbsyn, :]
-
-    # Valid set
-    validhmat = load_pkl(state.datapath + 'FB15k-valid-hs.pkl')
-    validlmat = load_pkl(state.datapath + 'FB15k-valid-ls.pkl')
-    validtmat = load_pkl(state.datapath + 'FB15k-valid-ts.pkl')
-    if state.op == 'tranPES':
-        validhmat = validhmat[:state.Nbsyn, :]
-        validlmat = validlmat[-state.Nbrel:, :]
-        validtmat = validtmat[:state.Nbsyn, :]
-
-    # Test set
-    testhmat = load_pkl(state.datapath + 'FB15k-test-hs.pkl')
-    testlmat = load_pkl(state.datapath + 'FB15k-test-ls.pkl')
-    testtmat = load_pkl(state.datapath + 'FB15k-test-ts.pkl')
-    if state.op == 'tranPES':
-        testhmat = testhmat[:state.Nbsyn, :]
-        testlmat = testlmat[-state.Nbrel:, :]
-        testtmat = testtmat[:state.Nbsyn, :]
-
-    # Index conversion
-    idxh = convert2idx(trainhmat)
-    idxl = convert2idx(trainlmat)
-    idxt = convert2idx(traintmat)
-    idxvh = convert2idx(validhmat)
-    idxvl = convert2idx(validlmat)
-    idxvt = convert2idx(validtmat)
-    idxth = convert2idx(testhmat)
-    idxtl = convert2idx(testlmat)
-    idxtt = convert2idx(testtmat)
-
-    true_triples = np.concatenate([idxh, idxvh, idxth, idxl, idxvl, idxtl, idxt, idxvt, idxtt]).reshape(3,
-                                                                                                        idxh.shape[0] +
-                                                                                                        idxvh.shape[0] +
-                                                                                                        idxth.shape[
-                                                                                                            0]).T
-
-    simfn = eval(state.simfn + 'sim')
-
-
-    g = open(state.savepath + '/' + state.bestmodel + '.pkl', 'rb')
-    embeddings = pickle.load(g)
-    g.close()
-
-    rankhfunc = RankHeadFnIdx(simfn, embeddings, subtensorspec=state.Nbsyn)
-    ranktfunc = RankTailFnIdx(simfn, embeddings, subtensorspec=state.Nbsyn)
-
-    timeref = time.time()
-    fres = FilteredPRankingScoreIdx(rankhfunc, ranktfunc, idxth, idxtl, idxtt, true_triples)
-    print('the evaluation took %s' % (time.time() - timeref))
-    output('Filteredtest_' + state.bestmodel, fres, n)
-
-    f = open('Filtered_eval.pkl', 'wb')
-    pickle.dump(fres, f, -1)
-    f.close()
-
-    idx2cat = {}
-    cat2idx = {}
-    for lidx in range(0, state.Nbrel):
-        lo = np.argwhere(true_triples[:,1] == lidx).flatten()
-
-        hl = true_triples[lo, 0]
-        _, hlcounts = np.unique(hl, return_counts=True)
-
-        lt = true_triples[lo, 2]
-        _, tlcounts = np.unique(lt, return_counts=True)
-        idx2cat[lidx] = convert2label(hlcounts.mean(), tlcounts.mean())
-        cat2idx.setdefault(convert2label(hlcounts.mean(), tlcounts.mean()), []).append(lidx)
-
-    vlist = list(idx2cat.values())
-    print([(s, vlist.count(s)) for s in set(vlist)])
-
-    hrank = fres[0]
-    trank = fres[1]
-
-    hcat2rank = {}
-    tcat2rank = {}
-
-    for hs, ts, linkid in zip(hrank, trank, idxtl):
-        hcat2rank.setdefault(idx2cat[linkid], []).append(hs)
-        tcat2rank.setdefault(idx2cat[linkid], []).append(ts)
-
-    print('#Predicting head:')
-    print('%12s  %12s  %12s  %12s' % ('1-To-1', '1-To-M', 'M-To-1', 'M-To-M'))
-    print('%12s%%  %12s%%  %12s%%  %12s%%' % (hitn(hcat2rank['1-To-1']), hitn(hcat2rank['1-To-Many']),
-                                        hitn(hcat2rank['Many-To-1']), hitn(hcat2rank['Many-To-Many'])))
-
-    print('#Predicting tail:')
-    print('%12s  %12s  %12s  %12s' % ('1-To-1', '1-To-M', 'M-To-1', 'M-To-M'))
-    print('%12s%%  %12s%%  %12s%%  %12s%%' % (hitn(tcat2rank['1-To-1']), hitn(tcat2rank['1-To-Many']),
-                                        hitn(tcat2rank['Many-To-1']), hitn(tcat2rank['Many-To-Many'])))
 
         # listrel = set(idxr)
         # dictrelres = {}
@@ -413,7 +282,6 @@ def RankingEvalf():
         #         round(dictrelgmean[i], 5), round(dictrelgmedian[i], 5),
         #         n, round(dictrelgrn[i], 3),
         #         len(dictrelres[i][0] + dictrelres[i][1])))
-
 if __name__ == '__main__':
-    #evaluation()
-    RankingEvalf()
+    evaluation()
+

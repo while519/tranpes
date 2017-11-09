@@ -84,33 +84,33 @@ def idxset(spmat):  # Nbent x batchsize
 
 
 # Experiment function --------------------------------------------------------------------------
-def FB15kexp(state):
+def WNexp(state):
     # Show experiment parameters
     print(state)
     np.random.seed(state.seed)
 
     # Positives
-    trainhmat = load_pkl(state.datapath + 'FB15k-train-hs.pkl')
-    trainlmat = load_pkl(state.datapath + 'FB15k-train-ls.pkl')
-    traintmat = load_pkl(state.datapath + 'FB15k-train-ts.pkl')
+    trainhmat = load_pkl(state.datapath + 'WN-train-hs.pkl')
+    trainlmat = load_pkl(state.datapath + 'WN-train-ls.pkl')
+    traintmat = load_pkl(state.datapath + 'WN-train-ts.pkl')
     if state.op == 'tranPES':
         trainhmat = trainhmat[:state.Nbsyn, :]
         trainlmat = trainlmat[-state.Nbrel:, :]
         traintmat = traintmat[:state.Nbsyn, :]
 
     # Valid set
-    validhmat = load_pkl(state.datapath + 'FB15k-valid-hs.pkl')
-    validlmat = load_pkl(state.datapath + 'FB15k-valid-ls.pkl')
-    validtmat = load_pkl(state.datapath + 'FB15k-valid-ts.pkl')
+    validhmat = load_pkl(state.datapath + 'WN-valid-hs.pkl')
+    validlmat = load_pkl(state.datapath + 'WN-valid-ls.pkl')
+    validtmat = load_pkl(state.datapath + 'WN-valid-ts.pkl')
     if state.op == 'tranPES':
         validhmat = validhmat[:state.Nbsyn, :]
         validlmat = validlmat[-state.Nbrel:, :]
         validtmat = validtmat[:state.Nbsyn, :]
 
     # Test set
-    testhmat = load_pkl(state.datapath + 'FB15k-test-hs.pkl')
-    testlmat = load_pkl(state.datapath + 'FB15k-test-ls.pkl')
-    testtmat = load_pkl(state.datapath + 'FB15k-test-ts.pkl')
+    testhmat = load_pkl(state.datapath + 'WN-test-hs.pkl')
+    testlmat = load_pkl(state.datapath + 'WN-test-ls.pkl')
+    testtmat = load_pkl(state.datapath + 'WN-test-ts.pkl')
     if state.op == 'tranPES':
         testhmat = testhmat[:state.Nbsyn, :]
         testlmat = testlmat[-state.Nbrel:, :]
@@ -148,7 +148,7 @@ def FB15kexp(state):
     lembedding = Embeddings(np.random, state.ndim, state.Nbrel, 'Labels Embedding')
     embeddings = [embedding, lembedding]
     simfn = eval(state.simfn + 'sim')
-    
+
 
     # Function compilation
     TranPES = create_TrainFunc_tranPES(simfn, embeddings, marge=state.marge, alpha=state.alpha, beta=state.beta)
@@ -184,7 +184,7 @@ def FB15kexp(state):
             out += [outtmp[0]/batchsize]
             outb += [outtmp[1]]
             outc += [outtmp[2]]
-            
+
             #embeddings[0].normalize()
 
         print('-- EPOCH %s (%s seconds per epoch):' % (epoch_count, (time.time() - timeref)))
@@ -196,7 +196,7 @@ def FB15kexp(state):
         outc = []
 
 
-        if (epoch_count % state.test_all) ==0 and epoch_count >= 400:
+        if (epoch_count % state.test_all) ==0 and epoch_count >= (state.totepochs - 100):
             # save current model
             state.nbepochs = epoch_count
             f = open(state.savepath + '/' + 'model' + str(state.nbepochs) + '.pkl', 'wb')
@@ -214,9 +214,9 @@ def FB15kexp(state):
 
 
 
-def launch(datapath='data/', dataset='FB15k', Nbent=16296, Nbsyn=14951, Nbrel=1345,
+def launch(datapath='data/', dataset='WN', Nbent=40961, Nbsyn=40943, Nbrel=18,
            op='tranPES', simfn='L2', ndim=50, marge=0.5, lremb=0.01, lrparam=0.01,
-           nbatches=100, totepochs=500, test_all=10, neval=1000, savepath='FB15k_tranPES',
+           nbatches=100, totepochs=500, test_all=10, neval=1000, savepath='WN_tranPES',
            seed=123, alpha=1., beta=1.):
     state = DD()
     state.datapath = datapath
@@ -242,8 +242,8 @@ def launch(datapath='data/', dataset='FB15k', Nbent=16296, Nbsyn=14951, Nbrel=13
     if not os.path.isdir(state.savepath):
         os.mkdir(state.savepath)
 
-    FB15kexp(state)
+    WNexp(state)
 
 
 if __name__ == '__main__':
-    launch(test_all=10, totepochs=500, neval=1, marge=0.3, nbatches=100, alpha=1., beta=0.01, lremb=0.002, lrparam=0.002)
+    launch(test_all=10, totepochs=500, neval=1, marge=0.5, nbatches=100, alpha=1., beta=0.01, lremb=0.002, lrparam=0.002)
